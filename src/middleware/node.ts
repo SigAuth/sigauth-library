@@ -1,4 +1,4 @@
-import { verifyRequestCore } from '../core/verifier';
+import { validateSigAuthRequest } from '../core/verifier';
 import type { SigAuthOptions, VerifyOutcome } from '../types';
 
 // Accepts a minimal request-like shape. Works with Node http.IncomingMessage, Fetch Request, or custom.
@@ -10,7 +10,7 @@ export async function verifyRequest(req: any, opts: SigAuthOptions): Promise<Ver
         for (const [k, v] of Object.entries(rawHeaders)) headers[k.toLowerCase()] = v as any;
     }
     const cookieHeader = headers['cookie'] as string | undefined;
-    return verifyRequestCore({ headers, cookieHeader }, opts);
+    return validateSigAuthRequest({ headers, cookieHeader }, opts);
 }
 
 // Small wrapper to guard a handler function

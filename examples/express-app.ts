@@ -6,7 +6,7 @@ const app = express();
 
 app.use(
     sigAuthExpress({
-        issuer: process.env.SIGAUTH_ISSUER || 'https://auth.example.com',
+        issuer: process.env.SIGAUTH_ISSUER || 'https://demo.sigauth.org',
         audience: process.env.SIGAUTH_AUDIENCE,
     })
 );
