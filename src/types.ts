@@ -1,8 +1,12 @@
-import type { JWTPayload } from 'jose';
+import { JWTPayload } from 'jose';
 
 export interface SigAuthOptions {
     // Expected issuer (e.g. https://auth.yourdomain.com)
     issuer: string;
+    // Security token for the application provided by the issuer
+    appToken: string;
+    // appId of the application provided by the issuer
+    appId: number;
     // Expected audience(s) in aud claim
     audience?: string | string[];
     // Optional explicit JWKS URI. Defaults to `${issuer}/.well-known/jwks.json`
@@ -19,20 +23,18 @@ export interface SigAuthOptions {
     getToken?: (req: unknown) => string | null;
 }
 
+export type JSONSerializable = string | number | boolean | null | { [key: string]: JSONSerializable } | JSONSerializable[];
+
 export interface SigAuthUser extends JWTPayload {
     sub: string;
     email?: string;
     name?: string;
     roles?: string[];
-    scope?: string;
-    // Keep full payload accessible
-    payload: JWTPayload;
 }
 
 export interface VerifyResult {
     ok: true;
     user: SigAuthUser;
-    token: string;
 }
 
 export interface VerifyError {
