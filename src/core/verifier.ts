@@ -1,5 +1,6 @@
 import { decodeJwt, importJWK, jwtVerify } from 'jose';
 import type { JSONSerializable, SigAuthOptions, SigAuthUser, VerifyOutcome } from '../types';
+import { PermissionBuilder } from './permission.builder';
 
 export interface MinimalRequestLike {
     headers?: Record<string, string | string[] | undefined>;
@@ -98,5 +99,15 @@ export class SigauthVerifier {
         } catch (err) {
             return { ok: false, status: 401, error: 'Invalid access token' };
         }
+    }
+
+    async hasPermission(permissionBuilder: PermissionBuilder): Promise<boolean>;
+    async hasPermission(permission: string): Promise<boolean>;
+    async hasPermission(arg: PermissionBuilder | string): Promise<boolean> {
+        if (arg instanceof PermissionBuilder) {
+            return this.hasPermission(arg.build());
+        }
+        // arg ist string
+        return false;
     }
 }
