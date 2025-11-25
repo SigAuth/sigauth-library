@@ -1,4 +1,4 @@
-import { decodeJwt, importJWK, jwtVerify } from 'jose';
+import { importJWK, JWTPayload, jwtVerify } from 'jose';
 import type { JSONSerializable, SigAuthOptions, SigAuthUser, VerifyOutcome } from '../types';
 
 export interface MinimalRequestLike {
@@ -8,7 +8,13 @@ export interface MinimalRequestLike {
 }
 
 export class SigauthVerifier {
-    opts: SigAuthOptions;
+    private opts: SigAuthOptions;
+    private user: SigAuthUser | null = null;
+
+    // ---------- Refresh Token Handling
+    private decodedAccessToken: JWTPayload | null = null;
+    private refreshToken: string | null = null;
+    private accessTokenExpires: number | null = null;
 
     constructor(opts: SigAuthOptions) {
         this.opts = opts;
@@ -41,6 +47,52 @@ export class SigauthVerifier {
         return out;
     }
 
+    private async initTokens(cookieHeader?: string | null) {
+        if (!this.decodedAccessToken) {
+            const cookies = this.parseCookies(cookieHeader);
+            if (!cookies['accessToken'] || !cookies['refreshToken']) return;
+
+            const jwksRes = await this.request('GET', `${this.opts.issuer}/.well-known/jwks.json`);
+            const jwks = await jwksRes.json();
+            const jwk = jwks.keys.find((k: any) => k.kid === 'sigauth');
+            if (!jwk) return { ok: false, status: 401, error: 'JWK not found for token' };
+
+            const publicKey = await importJWK(jwk, 'RS256');
+
+            try {
+                const { payload } = await jwtVerify(cookies['accessToken'], publicKey, {
+                    audience: 'Express App',
+                    issuer: this.opts.issuer,
+                });
+                this.refreshToken = cookies['refreshToken'];
+                this.decodedAccessToken = payload;
+                this.accessTokenExpires = payload.exp as number;
+            } catch (err) {
+                throw new Error('Invalid Access Token signature');
+            }
+        }
+    }
+
+    async refreshOnDemand(req: MinimalRequestLike): Promise<{ ok: boolean; accessToken?: string; refreshToken?: string }> {
+        await this.initTokens(req.cookieHeader);
+
+        if (!this.user || !this.accessTokenExpires || !this.refreshToken) return { ok: false };
+        if (this.accessTokenExpires - Date.now() / 1000 > 120) return { ok: false }; // skip if more than 2 minutes left
+
+        const res = await this.request(
+            'GET',
+            `${this.opts.issuer}/api/auth/oidc/refresh?refreshToken=${this.refreshToken}&app-token=${this.opts.appToken}`,
+        );
+
+        const data = await res.json();
+        if (!res.ok) {
+            console.error('Error refreshing token: ', data);
+            return { ok: false };
+        } else {
+            return { ok: true, ...data };
+        }
+    }
+
     async resolveAuthCode(code: string): Promise<{ ok: boolean; refreshToken: string; accessToken: string }> {
         const res = await this.request('GET', `${this.opts.issuer}/api/auth/oidc/exchange?code=${code}&app-token=${this.opts.appToken}`);
         const data = await res.json();
@@ -67,36 +119,32 @@ export class SigauthVerifier {
             return { ok: false, refreshToken: '', accessToken: '' };
         }
 
+        console.log('Access Token payload:', this.decodedAccessToken);
         return { ok: true, refreshToken: data.refreshToken, accessToken: data.accessToken };
     }
 
     async validateRequest(req: MinimalRequestLike): Promise<VerifyOutcome> {
-        const cookies = this.parseCookies(req.cookieHeader);
+        await this.initTokens(req.cookieHeader);
 
-        if (!cookies['accessToken'] || !cookies['refreshToken']) {
+        if (!this.decodedAccessToken || !this.refreshToken) {
             return { ok: false, status: 307, error: `${this.opts.issuer}/auth/oidc?appId=${this.opts.appId}` };
         }
 
-        const decoded = decodeJwt(cookies['accessToken']) as any;
-
-        const jwksRes = await this.request('GET', `${this.opts.issuer}/.well-known/jwks.json`);
-        const jwks = await jwksRes.json();
-        const jwk = jwks.keys.find((k: any) => k.kid === 'sigauth');
-        if (!jwk) return { ok: false, status: 401, error: 'JWK not found for token' };
-
-        const publicKey = await importJWK(jwk, 'RS256');
-
-        try {
-            const { payload } = await jwtVerify(cookies['accessToken'], publicKey, { audience: 'Express App', issuer: this.opts.issuer });
-            const user: SigAuthUser = {
-                sub: payload.sub as string,
-                email: payload.email as string | undefined,
-                name: payload.name as string | undefined,
-                roles: payload.roles as string[] | undefined,
-            };
-            return { ok: true, user };
-        } catch (err) {
+        if (!this.decodedAccessToken) {
             return { ok: false, status: 401, error: 'Invalid access token' };
         }
+
+        this.user = {
+            sub: this.decodedAccessToken.sub as string,
+            email: this.decodedAccessToken.email as string | undefined,
+            name: this.decodedAccessToken.name as string | undefined,
+            roles: this.decodedAccessToken.roles as string[] | undefined,
+        };
+
+        return { ok: true, user: this.user };
+    }
+
+    async hasPermission(perm: string): Promise<boolean> {
+        return false;
     }
 }

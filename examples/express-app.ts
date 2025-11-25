@@ -13,8 +13,8 @@ app.use(
     }),
 );
 
-app.get('/protected', (req: any, res: any) => {
-    res.json({ ok: true, user: req.user });
+app.get('/protected', (req: Express.Request, res: any) => {
+    res.json({ ok: true, user: req.sigauth });
 });
 
 app.listen(3001, () => console.log('Express example on http://localhost:3001'));

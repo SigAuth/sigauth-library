@@ -1,13 +1,12 @@
 import { Request, Response } from 'express';
 import { SigauthVerifier } from '../core/verifier';
-import type { SigAuthOptions, VerifyOutcome, VerifyResult } from '../types';
+import type { SigAuthOptions, VerifyResult } from '../types';
 
 declare global {
     namespace Express {
         interface Request {
-            sigauth?: VerifyOutcome;
-            user?: VerifyResult['user'];
-            token?: string;
+            sigauth: SigauthVerifier;
+            user: VerifyResult['user'];
         }
     }
 }
@@ -26,6 +25,7 @@ export function sigAuthExpress(opts: SigAuthOptions) {
             if (result.ok) {
                 res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: true, sameSite: 'lax' });
                 res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: true, sameSite: 'lax' });
+                console.log('Resolve successfull redirecitng to ' + (mappedUrl || '/'));
                 res.redirect(mappedUrl || '/');
             } else {
                 res.status(401).json({ error: 'Failed to resolve auth code' });
@@ -44,8 +44,13 @@ export function sigAuthExpress(opts: SigAuthOptions) {
                 return res.redirect(outcome.error);
             }
         }
+        const refresh = await verifier.refreshOnDemand(req);
+        if (refresh.ok) {
+            res.cookie('accessToken', refresh.accessToken, { httpOnly: true, secure: true, sameSite: 'lax' });
+            res.cookie('refreshToken', refresh.refreshToken, { httpOnly: true, secure: true, sameSite: 'lax' });
+        }
 
-        req.sigauth = outcome;
+        req.sigauth = verifier;
         if (outcome.ok) {
             req.user = outcome.user;
             return next();
