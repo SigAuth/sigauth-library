@@ -1,6 +1,7 @@
 import { importJWK, JWTPayload, jwtVerify } from 'jose';
 import type { JSONSerializable, SigAuthOptions, SigAuthUser, VerifyOutcome } from '../types';
 import { PermissionBuilder } from './permission.builder';
+import { ok } from 'assert';
 
 export interface MinimalRequestLike {
     headers?: Record<string, string | string[] | undefined>;
@@ -15,6 +16,7 @@ export class SigauthVerifier {
     // ---------- Refresh Token Handling
     private decodedAccessToken: JWTPayload | null = null;
     private refreshToken: string | null = null;
+    private accessToken: string | null = null;
     private accessTokenExpires: number | null = null;
 
     constructor(opts: SigAuthOptions) {
@@ -48,10 +50,10 @@ export class SigauthVerifier {
         return out;
     }
 
-    private async initTokens(cookieHeader?: string | null) {
+    private async initTokens(cookieHeader?: string | null): Promise<{ ok: boolean; status?: number; error?: string }> {
         if (!this.decodedAccessToken) {
             const cookies = this.parseCookies(cookieHeader);
-            if (!cookies['accessToken'] || !cookies['refreshToken']) return;
+            if (!cookies['accessToken'] || !cookies['refreshToken']) return { ok: false, status: 401, error: 'Missing tokens' };
 
             const jwksRes = await this.request('GET', `${this.opts.issuer}/.well-known/jwks.json`);
             const jwks = await jwksRes.json();
@@ -66,20 +68,23 @@ export class SigauthVerifier {
                     issuer: this.opts.issuer,
                 });
                 this.refreshToken = cookies['refreshToken'];
+                this.accessToken = cookies['accessToken'];
                 this.decodedAccessToken = payload;
                 this.accessTokenExpires = payload.exp as number;
             } catch (err) {
                 console.error('Invalid access token signature:', err);
-                return false;
+                return { ok: false, status: 401, error: 'Invalid access token' };
             }
         }
+        return { ok: true };
     }
 
-    async refreshOnDemand(req: MinimalRequestLike): Promise<{ ok: boolean; accessToken?: string; refreshToken?: string }> {
-        if (!(await this.initTokens(req.cookieHeader))) return { ok: false };
+    async refreshOnDemand(
+        req: MinimalRequestLike,
+    ): Promise<{ ok: boolean; failed?: boolean; accessToken?: string; refreshToken?: string }> {
+        if (!(await this.initTokens(req.cookieHeader)).ok) return { ok: false, failed: true };
 
-        if (!this.user || !this.accessTokenExpires || !this.refreshToken) return { ok: false };
-        if (this.accessTokenExpires - Date.now() / 1000 > 120) return { ok: false }; // skip if more than 2 minutes left
+        if (this.accessTokenExpires! - Date.now() / 1000 > 120) return { ok: false }; // skip if more than 2 minutes left
 
         const res = await this.request(
             'GET',
@@ -89,8 +94,13 @@ export class SigauthVerifier {
         const data = await res.json();
         if (!res.ok) {
             console.error('Error refreshing token: ', data);
-            return { ok: false };
+            this.decodedAccessToken = null;
+            await this.initTokens(`accessToken=; refreshToken=`);
+            return { ok: false, failed: true };
         } else {
+            // create cookie Header to parse new tokens
+            this.decodedAccessToken = null;
+            await this.initTokens(`accessToken=${data.accessToken}; refreshToken=${data.refreshToken}`);
             return { ok: true, ...data };
         }
     }
@@ -152,7 +162,13 @@ export class SigauthVerifier {
         if (arg instanceof PermissionBuilder) {
             return this.hasPermission(arg.build());
         }
-        // arg ist string
-        return false;
+
+        // arg ist always string
+        const res = await this.request(
+            'GET',
+            `${this.opts.issuer}/api/auth/oidc/has-permission?permission=${arg}&appId=${this.opts.appId}&appToken=${this.opts.appToken}&accessToken=${this.accessToken}`,
+        );
+        const data = await res.text();
+        return res.ok;
     }
 }

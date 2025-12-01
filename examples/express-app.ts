@@ -7,7 +7,7 @@ const app = express();
 
 app.use(
     sigAuthExpress({
-        issuer: process.env.SIGAUTH_ISSUER || 'http://localhost:4000',
+        issuer: process.env.SIGAUTH_ISSUER || 'http://localhost:5173',
         audience: process.env.SIGAUTH_AUDIENCE || 'express-app',
         appId: 2, // example appId
         appToken: 'EOQ0xCGu5ZS8q04RGNPAZ7QqoTnmr0Z5NJ2wZslleehV8Gx1pgGKVByN00DXHcsK', // example appToken
@@ -19,8 +19,8 @@ app.get('/protected', (req: Express.Request, res: any) => {
     res.json({ ok: true, user: req.sigauth });
 });
 
-app.get('/protected/:id', (req: Request<{ id: string }>, res: any) => {
-    const hasPermission = req.sigauth.hasPermission(new PermissionBuilder('view', 2).withAssetId(+req.params.id).withContainerId(2));
+app.get('/protected/:id', async (req: Request<{ id: string }>, res: any) => {
+    const hasPermission = await req.sigauth.hasPermission(new PermissionBuilder('asset', 2).withAssetId(+req.params.id).withContainerId(2));
     res.json({ ok: true, hasPermission, id: req.params.id });
 });
 

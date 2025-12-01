@@ -42,6 +42,16 @@ export function sigAuthExpress(opts: SigAuthOptions) {
             return next();
         }
 
+        const refresh = await verifier.refreshOnDemand(req);
+        if (refresh.ok) {
+            res.cookie('accessToken', refresh.accessToken, { httpOnly: true, secure: true, sameSite: 'lax' });
+            res.cookie('refreshToken', refresh.refreshToken, { httpOnly: true, secure: true, sameSite: 'lax' });
+        }
+        if (refresh.failed) {
+            res.cookie('accessToken', '', { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 0 });
+            res.cookie('refreshToken', '', { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 0 });
+        }
+
         const outcome = await verifier.validateRequest({
             headers: req.headers as Record<string, string | string[] | undefined>,
             cookieHeader: req.headers['cookie'] as string | undefined,
@@ -54,11 +64,6 @@ export function sigAuthExpress(opts: SigAuthOptions) {
                 map.set(req.ip!, req.url);
                 return res.redirect(outcome.error);
             }
-        }
-        const refresh = await verifier.refreshOnDemand(req);
-        if (refresh.ok) {
-            res.cookie('accessToken', refresh.accessToken, { httpOnly: true, secure: true, sameSite: 'lax' });
-            res.cookie('refreshToken', refresh.refreshToken, { httpOnly: true, secure: true, sameSite: 'lax' });
         }
 
         req.sigauth = verifier;
