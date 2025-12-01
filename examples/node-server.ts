@@ -11,6 +11,7 @@ const handler = withSigAuth(
         audience: process.env.SIGAUTH_AUDIENCE,
         appId: 2, // example appId
         appToken: '8VzHwVs6WkLI3hcvnSwNsn2TcmJeA4GHLWXaxDEZDjkHhY44BdkyPHaVvHZtpDYu', // example appToken
+        authenticateRoutes: ['/protected/*']
     },
 );
 

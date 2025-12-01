@@ -1,6 +1,7 @@
 import { validateSigAuthRequest } from '../core/verifier';
 import type { SigAuthOptions, VerifyOutcome } from '../types';
 
+// TODO WIP
 // Accepts a minimal request-like shape. Works with Node http.IncomingMessage, Fetch Request, or custom.
 export async function verifyRequest(req: any, opts: SigAuthOptions): Promise<VerifyOutcome> {
     // Attempt to normalize from common request shapes

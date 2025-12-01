@@ -21,6 +21,8 @@ export interface SigAuthOptions {
     leewaySeconds?: number;
     // Custom token extractor; return the raw token string or null if none
     getToken?: (req: unknown) => string | null;
+    // List of routes that require authentication
+    authenticateRoutes: string[];
 }
 
 export type JSONSerializable = string | number | boolean | null | { [key: string]: JSONSerializable } | JSONSerializable[];

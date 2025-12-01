@@ -69,13 +69,14 @@ export class SigauthVerifier {
                 this.decodedAccessToken = payload;
                 this.accessTokenExpires = payload.exp as number;
             } catch (err) {
-                throw new Error('Invalid Access Token signature');
+                console.error('Invalid access token signature:', err);
+                return false;
             }
         }
     }
 
     async refreshOnDemand(req: MinimalRequestLike): Promise<{ ok: boolean; accessToken?: string; refreshToken?: string }> {
-        await this.initTokens(req.cookieHeader);
+        if (!(await this.initTokens(req.cookieHeader))) return { ok: false };
 
         if (!this.user || !this.accessTokenExpires || !this.refreshToken) return { ok: false };
         if (this.accessTokenExpires - Date.now() / 1000 > 120) return { ok: false }; // skip if more than 2 minutes left
@@ -143,10 +144,6 @@ export class SigauthVerifier {
         };
 
         return { ok: true, user: this.user };
-    }
-
-    async hasPermission(perm: string): Promise<boolean> {
-        return false;
     }
 
     async hasPermission(permissionBuilder: PermissionBuilder): Promise<boolean>;

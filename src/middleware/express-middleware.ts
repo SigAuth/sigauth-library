@@ -33,12 +33,23 @@ export function sigAuthExpress(opts: SigAuthOptions) {
             return;
         }
 
+        if (
+            !opts.authenticateRoutes.some(patteren => {
+                const regex = new RegExp('^' + patteren.replace('*', '.*') + '$');
+                return regex.test(req.path);
+            })
+        ) {
+            return next();
+        }
+
         const outcome = await verifier.validateRequest({
             headers: req.headers as Record<string, string | string[] | undefined>,
             cookieHeader: req.headers['cookie'] as string | undefined,
         });
 
         if (!outcome.ok) {
+            res.cookie('accessToken', '', { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 0 });
+            res.cookie('refreshToken', '', { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 0 });
             if (outcome.status === 307) {
                 map.set(req.ip!, req.url);
                 return res.redirect(outcome.error);
