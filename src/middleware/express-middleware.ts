@@ -13,14 +13,14 @@ declare global {
 
 export function sigAuthExpress(opts: SigAuthOptions) {
     const verifier = new SigauthVerifier(opts);
-    const map: Map<string, string> = new Map();
+    const waiting: Map<string, string> = new Map();
 
     return async function (req: Request, res: Response, next: Function) {
         if (req.url.startsWith('/sigauth/oidc/auth')) {
             const code = req.query.code as string | undefined;
             const result = await verifier.resolveAuthCode(code || '');
-            const mappedUrl = map.get(req.ip!);
-            map.delete(req.ip!);
+            const mappedUrl = waiting.get(req.ip!);
+            waiting.delete(req.ip!);
 
             if (result.ok) {
                 res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: true, sameSite: 'lax' });
@@ -61,7 +61,7 @@ export function sigAuthExpress(opts: SigAuthOptions) {
             res.cookie('accessToken', '', { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 0 });
             res.cookie('refreshToken', '', { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 0 });
             if (outcome.status === 307) {
-                map.set(req.ip!, req.url);
+                waiting.set(req.ip!, req.url);
                 return res.redirect(outcome.error);
             }
         }
