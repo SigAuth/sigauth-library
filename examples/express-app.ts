@@ -19,9 +19,14 @@ app.get('/protected', (req: Express.Request, res: any) => {
     res.json({ ok: true, user: req.sigauth });
 });
 
-app.get('/protected/:id', async (req: Request<{ id: string }>, res: any) => {
+app.get('/protected/blog/:id', async (req: Request<{ id: string }>, res: any) => {
     const hasPermission = await req.sigauth.hasPermission(new PermissionBuilder('asset', 2).withAssetId(+req.params.id).withContainerId(2));
     res.json({ ok: true, hasPermission, id: req.params.id });
+});
+
+app.get('/protected/info', async (req: Express.Request, res: any) => {
+    const userInfo = await req.sigauth.getUserInfo();
+    res.json({ ok: true, userInfo });
 });
 
 app.get('/', (req, res) => {

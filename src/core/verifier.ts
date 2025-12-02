@@ -171,4 +171,22 @@ export class SigauthVerifier {
         const data = await res.text();
         return res.ok;
     }
+
+    async getUserInfo() {
+        if (!this.accessToken) {
+            throw new Error('No access token available');
+        }
+
+        const res = await this.request(
+            'GET',
+            `${this.opts.issuer}/api/auth/oidc/userinfo?accessToken=${this.accessToken}&appToken=${this.opts.appToken}`,
+        );
+        const data = await res.json();
+        if (!res.ok) {
+            console.error('Error fetching user info: ', data);
+            throw new Error('Failed to fetch user info');
+        }
+
+        return data;
+    }
 }
