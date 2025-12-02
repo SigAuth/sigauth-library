@@ -23,6 +23,8 @@ export interface SigAuthOptions {
     getToken?: (req: unknown) => string | null;
     // List of routes that require authentication
     authenticateRoutes: string[];
+    // Automatic token refresh threshold in seconds (default 120s)
+    refreshThresholdSeconds?: number;
 }
 
 export type JSONSerializable = string | number | boolean | null | { [key: string]: JSONSerializable } | JSONSerializable[];

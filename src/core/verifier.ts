@@ -84,7 +84,7 @@ export class SigauthVerifier {
     ): Promise<{ ok: boolean; failed?: boolean; accessToken?: string; refreshToken?: string }> {
         if (!(await this.initTokens(req.cookieHeader)).ok) return { ok: false, failed: true };
 
-        if (this.accessTokenExpires! - Date.now() / 1000 > 120) return { ok: false }; // skip if more than 2 minutes left
+        if (this.accessTokenExpires! - Date.now() / 1000 > (this.opts.refreshThresholdSeconds ?? 120)) return { ok: false }; // skip if more than 2 minutes left
 
         const res = await this.request(
             'GET',
