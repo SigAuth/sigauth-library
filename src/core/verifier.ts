@@ -179,12 +179,23 @@ export class SigauthVerifier {
 
         const res = await this.request(
             'GET',
-            `${this.opts.issuer}/api/auth/oidc/userinfo?accessToken=${this.accessToken}&appToken=${this.opts.appToken}`,
+            `${this.opts.issuer}/api/auth/oidc/user-info?accessToken=${this.accessToken}&appToken=${this.opts.appToken}`,
         );
         const data = await res.json();
         if (!res.ok) {
             console.error('Error fetching user info: ', data);
-            throw new Error('Failed to fetch user info');
+            return undefined;
+        }
+
+        return data;
+    }
+
+    async getAppInfo() {
+        const res = await this.request('GET', `${this.opts.issuer}/api/app/info?appToken=${this.opts.appToken}`);
+        const data = await res.json();
+        if (!res.ok) {
+            console.error('Error fetching app info: ', data);
+            return undefined;
         }
 
         return data;

@@ -2,18 +2,19 @@
 import express, { Request } from 'express';
 import { PermissionBuilder } from '../src/core/permission.builder';
 import { sigAuthExpress } from '../src/middleware/express-middleware';
+import { SigauthVerifier } from '../src/core/verifier';
 
 const app = express();
 
-app.use(
-    sigAuthExpress({
-        issuer: process.env.SIGAUTH_ISSUER || 'http://localhost:5173',
-        audience: process.env.SIGAUTH_AUDIENCE || 'express-app',
-        appId: 2, // example appId
-        appToken: 'EOQ0xCGu5ZS8q04RGNPAZ7QqoTnmr0Z5NJ2wZslleehV8Gx1pgGKVByN00DXHcsK', // example appToken
-        authenticateRoutes: ['/protected/*', '/protected'],
-    }),
-);
+const opts = {
+    issuer: process.env.SIGAUTH_ISSUER || 'http://localhost:5173',
+    audience: process.env.SIGAUTH_AUDIENCE || 'express-app',
+    appId: 2, // example appId
+    appToken: 'EOQ0xCGu5ZS8q04RGNPAZ7QqoTnmr0Z5NJ2wZslleehV8Gx1pgGKVByN00DXHcsK', // example appToken
+    authenticateRoutes: ['/protected/*', '/protected'],
+};
+
+app.use(sigAuthExpress(opts));
 
 app.get('/protected', (req: Express.Request, res: any) => {
     res.json({ ok: true, user: req.sigauth });
@@ -24,9 +25,17 @@ app.get('/protected/blog/:id', async (req: Request<{ id: string }>, res: any) =>
     res.json({ ok: true, hasPermission, id: req.params.id });
 });
 
-app.get('/protected/info', async (req: Express.Request, res: any) => {
+app.get('/protected/user/info', async (req: Express.Request, res: any) => {
+    // getUserInfo works because it is behind a route which is included in authenticateRoutes
     const userInfo = await req.sigauth.getUserInfo();
     res.json({ ok: true, userInfo });
+});
+
+app.get('/info', async (req: Express.Request, res: any) => {
+    // create a verifier instance because req.sigauth is not available outside authenticateRoutes
+    const sigAuth = new SigauthVerifier(opts);
+    const appInfo = await sigAuth.getAppInfo();
+    res.json({ ok: true, appInfo });
 });
 
 app.get('/', (req, res) => {
