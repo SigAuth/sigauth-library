@@ -1,8 +1,9 @@
 // Example Express app using the middleware locally with pnpm/yarn/npm link or workspace
 import express, { Request } from 'express';
 import { PermissionBuilder } from '../src/core/permission.builder';
-import { sigAuthExpress } from '../src/middleware/express-middleware';
+import { sigauthExpress } from '../src/middleware/express-middleware';
 import { SigauthVerifier } from '../src/core/verifier';
+import { SigAuthOptions } from '../src/types';
 
 const app = express();
 
@@ -12,9 +13,10 @@ const opts = {
     appId: 2, // example appId
     appToken: 'EOQ0xCGu5ZS8q04RGNPAZ7QqoTnmr0Z5NJ2wZslleehV8Gx1pgGKVByN00DXHcsK', // example appToken
     authenticateRoutes: ['/protected/*', '/protected'],
-};
+    secureCookies: false, // for local testing without HTTPS
+} as SigAuthOptions;
 
-app.use(sigAuthExpress(opts));
+app.use(sigauthExpress(opts));
 
 app.get('/protected', (req: Express.Request, res: any) => {
     res.json({ ok: true, user: req.sigauth });

@@ -4,8 +4,12 @@
         "module": "nodenext",
         "declaration": true,
         "outDir": "./dist",
+        "baseUrl": ".",
         "strict": true,
         "esModuleInterop": true,
+        "paths": {
+            "@/*": ["./src/*"]
+        },
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true
     },

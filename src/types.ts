@@ -25,6 +25,8 @@ export interface SigAuthOptions {
     authenticateRoutes: string[];
     // Automatic token refresh threshold in seconds (default 120s)
     refreshThresholdSeconds?: number;
+    // Wether cookies should be secure (i.e., sent only over HTTPS). Default: true
+    secureCookies?: boolean;
 }
 
 export type JSONSerializable = string | number | boolean | null | { [key: string]: JSONSerializable } | JSONSerializable[];

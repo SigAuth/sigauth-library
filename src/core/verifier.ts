@@ -124,14 +124,12 @@ export class SigauthVerifier {
 
         // Access Token prüfen
         try {
-            const { payload } = await jwtVerify(data.accessToken, publicKey, { audience: 'Express App', issuer: this.opts.issuer });
-            console.log('Access Token payload:', payload);
+            await jwtVerify(data.accessToken, publicKey, { audience: this.opts.audience, issuer: this.opts.issuer });
         } catch (err) {
             console.error('Invalid Access Token signature:', err);
             return { ok: false, refreshToken: '', accessToken: '' };
         }
 
-        console.log('Access Token payload:', this.decodedAccessToken);
         return { ok: true, refreshToken: data.refreshToken, accessToken: data.accessToken };
     }
 

@@ -11,7 +11,7 @@ declare global {
     }
 }
 
-export function sigAuthExpress(opts: SigAuthOptions) {
+export function sigauthExpress(opts: SigAuthOptions) {
     const verifier = new SigauthVerifier(opts);
     const waiting: Map<string, string> = new Map();
 
@@ -23,8 +23,8 @@ export function sigAuthExpress(opts: SigAuthOptions) {
             waiting.delete(req.ip!);
 
             if (result.ok) {
-                res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: true, sameSite: 'lax' });
-                res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: true, sameSite: 'lax' });
+                res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax' });
+                res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax' });
                 console.log('Resolve successfull redirecitng to ' + (mappedUrl || '/'));
                 res.redirect(mappedUrl || '/');
             } else {
@@ -44,12 +44,12 @@ export function sigAuthExpress(opts: SigAuthOptions) {
 
         const refresh = await verifier.refreshOnDemand(req);
         if (refresh.ok) {
-            res.cookie('accessToken', refresh.accessToken, { httpOnly: true, secure: true, sameSite: 'lax' });
-            res.cookie('refreshToken', refresh.refreshToken, { httpOnly: true, secure: true, sameSite: 'lax' });
+            res.cookie('accessToken', refresh.accessToken, { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax' });
+            res.cookie('refreshToken', refresh.refreshToken, { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax' });
         }
         if (refresh.failed) {
-            res.cookie('accessToken', '', { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 0 });
-            res.cookie('refreshToken', '', { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 0 });
+            res.cookie('accessToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0 });
+            res.cookie('refreshToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0 });
         }
 
         const outcome = await verifier.validateRequest({
@@ -58,8 +58,8 @@ export function sigAuthExpress(opts: SigAuthOptions) {
         });
 
         if (!outcome.ok) {
-            res.cookie('accessToken', '', { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 0 });
-            res.cookie('refreshToken', '', { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 0 });
+            res.cookie('accessToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0 });
+            res.cookie('refreshToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0 });
             if (outcome.status === 307) {
                 waiting.set(req.ip!, req.url);
                 return res.redirect(outcome.error);

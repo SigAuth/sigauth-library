@@ -1,27 +1,33 @@
 import http from 'http';
-import { withSigAuth } from '../src/middleware/node';
+import { NodeRequest, NodeResponse, sigauthNode } from '../src/middleware/node-middleware';
 
-const handler = withSigAuth(
-    (req: any, res: http.ServerResponse) => {
-        res.writeHead(200, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, user: (req as any).user }));
-    },
-    {
-        issuer: process.env.SIGAUTH_ISSUER || 'https://demo.sigauth.org',
-        audience: process.env.SIGAUTH_AUDIENCE,
-        appId: 2, // example appId
-        appToken: '8VzHwVs6WkLI3hcvnSwNsn2TcmJeA4GHLWXaxDEZDjkHhY44BdkyPHaVvHZtpDYu', // example appToken
-        authenticateRoutes: ['/protected/*']
-    },
-);
+const handler = sigauthNode({
+    issuer: 'http://localhost:5173',
+    audience: 'Node App',
+    appId: 3, // example appId
+    appToken: 'RhapPkDjigFdc4WXFmUlUQG9HdAYqWvNI7i9lFzsYRR2F0fZaQ7J9FsOW2odjWag', // example appToken
+    authenticateRoutes: ['/protected/*'],
+    secureCookies: false, // for local testing without HTTPS
+});
 
-const server = http.createServer(async (req, res) => {
+const server = http.createServer(async (req: NodeRequest, res: NodeResponse) => {
     try {
-        await (handler as any)(req, res);
+        const failed = await handler(req, res);
+        if (failed) return;
     } catch (e: any) {
         const status = (e as any).status || 500;
         res.writeHead(status, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ error: e?.message || 'error' }));
+    }
+
+    if (!req.url?.startsWith('/protected')) {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, message: 'Unprotected Route' }));
+    } else {
+        const user = req.user;
+
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, message: 'Protected Route', user }));
     }
 });
 
