@@ -27,6 +27,9 @@ export class PermissionBuilder {
     }
 
     build(): string {
+        if (this.assetId && !this.containerId) {
+            throw new Error('ContainerId must be set if AssetId is set');
+        }
         return `${this.ident}:${this.assetId ?? ''}:${this.appId}:${this.containerId ?? ''}`;
     }
 }
