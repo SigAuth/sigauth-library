@@ -16,11 +16,6 @@ export class PermissionBuilder {
         return this;
     }
 
-    withAppId(appId: number): this {
-        this.appId = appId;
-        return this;
-    }
-
     withContainerId(containerId: number): this {
         this.containerId = containerId;
         return this;

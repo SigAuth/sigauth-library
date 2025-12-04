@@ -1,5 +1,6 @@
 import http from 'http';
 import { NodeRequest, NodeResponse, sigauthNode } from '../src/middleware/node-middleware';
+import { PermissionBuilder } from '../src/core/permission.builder';
 
 const handler = sigauthNode({
     issuer: 'http://localhost:5173',
@@ -11,14 +12,8 @@ const handler = sigauthNode({
 });
 
 const server = http.createServer(async (req: NodeRequest, res: NodeResponse) => {
-    try {
-        const failed = await handler(req, res);
-        if (failed) return;
-    } catch (e: any) {
-        const status = (e as any).status || 500;
-        res.writeHead(status, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ error: e?.message || 'error' }));
-    }
+    const failed = await handler(req, res);
+    if (failed) return;
 
     if (!req.url?.startsWith('/protected')) {
         res.writeHead(200, { 'content-type': 'application/json' });
@@ -26,6 +21,9 @@ const server = http.createServer(async (req: NodeRequest, res: NodeResponse) => 
     } else {
         const user = req.user;
 
+        const hasReadPermission = await req.sigauth?.hasPermission(
+            new PermissionBuilder('read', 3).withAssetId(10).withContainerId(5).build(),
+        );
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ ok: true, message: 'Protected Route', user }));
     }
