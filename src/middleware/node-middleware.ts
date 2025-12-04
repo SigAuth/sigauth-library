@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import { URL } from 'url';
-import { SigauthVerifier } from '../core/verifier';
+import { MinimalRequestLike, SigauthVerifier } from '../core/verifier';
 import type { SigAuthOptions, SigAuthUser, VerifyOutcome } from '../types';
 
 // A minimal request/response shape to keep this usable with custom servers as well
@@ -29,6 +29,7 @@ function setCookie(
     if (opts.secure) attributes.push('Secure');
     if (opts.sameSite) attributes.push(`SameSite=${opts.sameSite}`);
     if (typeof opts.maxAge === 'number') attributes.push(`Max-Age=${opts.maxAge}`);
+    attributes.push('Path=/');
 
     const cookie = attributes.join('; ');
     const existing = res.getHeader('Set-Cookie');
@@ -109,19 +110,15 @@ export function sigauthNode(opts: SigAuthOptions) {
                     sameSite: 'lax',
                 });
 
-                // debug: inspect headers right before redirect
-                console.log('Set-Cookie header before redirect:', res.getHeader('Set-Cookie'));
-
                 redirect(res, mappedUrl || '/');
                 return true;
             } else {
-                console.error(result);
                 sendJson(res, 401, { error: 'Failed to resolve auth code' });
                 return true;
             }
         }
 
-        // Route filter (like express-middleware.ts)
+        // Route filter
         const path = url.pathname;
         const needsAuth = opts.authenticateRoutes.some(pattern => {
             const regex = new RegExp('^' + pattern.replace('*', '.*') + '$');
@@ -133,9 +130,7 @@ export function sigauthNode(opts: SigAuthOptions) {
             return false;
         }
 
-        // Refresh on demand – keep like Express
-        const refresh = await verifier.refreshOnDemand(req as any);
-
+        const refresh = await verifier.refreshOnDemand(req);
         if (refresh.ok) {
             setCookie(res, 'accessToken', refresh.accessToken!, {
                 httpOnly: true,
@@ -165,22 +160,23 @@ export function sigauthNode(opts: SigAuthOptions) {
 
         const outcome: VerifyOutcome = await verifier.validateRequest({
             headers: req.headers as Record<string, string | string[] | undefined>,
-            cookieHeader: req.headers['cookie'] as string | undefined,
         });
 
         if (!outcome.ok) {
-            setCookie(res, 'accessToken', '', {
-                httpOnly: true,
-                secure: opts.secureCookies ?? true,
-                sameSite: 'lax',
-                maxAge: 0,
-            });
-            setCookie(res, 'refreshToken', '', {
-                httpOnly: true,
-                secure: opts.secureCookies ?? true,
-                sameSite: 'lax',
-                maxAge: 0,
-            });
+            if (!refresh.failed) {
+                setCookie(res, 'accessToken', '', {
+                    httpOnly: true,
+                    secure: opts.secureCookies ?? true,
+                    sameSite: 'lax',
+                    maxAge: 0,
+                });
+                setCookie(res, 'refreshToken', '', {
+                    httpOnly: true,
+                    secure: opts.secureCookies ?? true,
+                    sameSite: 'lax',
+                    maxAge: 0,
+                });
+            }
 
             if (outcome.status === 307) {
                 const ip = (req.socket && req.socket.remoteAddress) || 'unknown';

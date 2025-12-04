@@ -5,8 +5,6 @@ import { ok } from 'assert';
 
 export interface MinimalRequestLike {
     headers?: Record<string, string | string[] | undefined>;
-    // Optional raw cookies string (e.g., from req.headers.cookie)
-    cookieHeader?: string | null;
 }
 
 export class SigauthVerifier {
@@ -32,7 +30,6 @@ export class SigauthVerifier {
             credentials: 'include', // ensure cookies are sent with request
             body: JSON.stringify(jsonBody),
         });
-        if (!res.ok) console.error('Request failed: ', res.status);
         return res;
     }
 
@@ -50,9 +47,12 @@ export class SigauthVerifier {
         return out;
     }
 
-    private async initTokens(cookieHeader?: string | null): Promise<{ ok: boolean; status?: number; error?: string }> {
+    private async initTokens(req: MinimalRequestLike): Promise<{ ok: boolean; status?: number; error?: string }> {
         if (!this.decodedAccessToken) {
-            const cookies = this.parseCookies(cookieHeader);
+            const raw = req.headers?.cookie;
+
+            const cookieString = Array.isArray(raw) ? raw.join('; ') : raw || '';
+            const cookies = this.parseCookies(cookieString);
             if (!cookies['accessToken'] || !cookies['refreshToken']) return { ok: false, status: 401, error: 'Missing tokens' };
 
             const jwksRes = await this.request('GET', `${this.opts.issuer}/.well-known/jwks.json`);
@@ -64,7 +64,7 @@ export class SigauthVerifier {
 
             try {
                 const { payload } = await jwtVerify(cookies['accessToken'], publicKey, {
-                    audience: 'Express App',
+                    audience: this.opts.audience,
                     issuer: this.opts.issuer,
                 });
                 this.refreshToken = cookies['refreshToken'];
@@ -82,8 +82,7 @@ export class SigauthVerifier {
     async refreshOnDemand(
         req: MinimalRequestLike,
     ): Promise<{ ok: boolean; failed?: boolean; accessToken?: string; refreshToken?: string }> {
-        if (!(await this.initTokens(req.cookieHeader)).ok) return { ok: false, failed: true };
-
+        if (!(await this.initTokens(req)).ok) return { ok: false, failed: true };
         if (this.accessTokenExpires! - Date.now() / 1000 > (this.opts.refreshThresholdSeconds ?? 120)) return { ok: false }; // skip if more than 2 minutes left
 
         const res = await this.request(
@@ -95,12 +94,12 @@ export class SigauthVerifier {
         if (!res.ok) {
             console.error('Error refreshing token: ', data);
             this.decodedAccessToken = null;
-            await this.initTokens(`accessToken=; refreshToken=`);
+            await this.initTokens({ headers: { cookie: `accessToken=; refreshToken=` } });
             return { ok: false, failed: true };
         } else {
             // create cookie Header to parse new tokens
             this.decodedAccessToken = null;
-            await this.initTokens(`accessToken=${data.accessToken}; refreshToken=${data.refreshToken}`);
+            await this.initTokens({ headers: { cookie: `accessToken=${data.accessToken}; refreshToken=${data.refreshToken}` } });
             return { ok: true, ...data };
         }
     }
@@ -125,8 +124,8 @@ export class SigauthVerifier {
         // Access Token prüfen
         try {
             await jwtVerify(data.accessToken, publicKey, { audience: this.opts.audience, issuer: this.opts.issuer });
-        } catch (err) {
-            console.error('Invalid Access Token signature:', err);
+        } catch (err: any) {
+            console.error('Invalid Access Token signature:', err.message, err.payload);
             return { ok: false, refreshToken: '', accessToken: '' };
         }
 
@@ -134,7 +133,7 @@ export class SigauthVerifier {
     }
 
     async validateRequest(req: MinimalRequestLike): Promise<VerifyOutcome> {
-        await this.initTokens(req.cookieHeader);
+        await this.initTokens(req);
 
         if (!this.decodedAccessToken || !this.refreshToken) {
             return { ok: false, status: 307, error: `${this.opts.issuer}/auth/oidc?appId=${this.opts.appId}` };

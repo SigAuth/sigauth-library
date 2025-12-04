@@ -8,8 +8,8 @@ import { SigAuthOptions } from '../src/types';
 const app = express();
 
 const opts = {
-    issuer: process.env.SIGAUTH_ISSUER || 'http://localhost:5173',
-    audience: process.env.SIGAUTH_AUDIENCE || 'express-app',
+    issuer: 'http://localhost:5173', // SigAuth instance url
+    audience: 'Express App', // make sure this matches the audience configured in the SigAuth OIDC app
     appId: 2, // example appId
     appToken: 'EOQ0xCGu5ZS8q04RGNPAZ7QqoTnmr0Z5NJ2wZslleehV8Gx1pgGKVByN00DXHcsK', // example appToken
     authenticateRoutes: ['/protected/*', '/protected'],

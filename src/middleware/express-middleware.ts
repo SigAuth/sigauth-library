@@ -23,9 +23,18 @@ export function sigauthExpress(opts: SigAuthOptions) {
             waiting.delete(req.ip!);
 
             if (result.ok) {
-                res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax' });
-                res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax' });
-                console.log('Resolve successfull redirecitng to ' + (mappedUrl || '/'));
+                res.cookie('accessToken', result.accessToken, {
+                    httpOnly: true,
+                    secure: opts.secureCookies ?? true,
+                    sameSite: 'lax',
+                    path: '/',
+                });
+                res.cookie('refreshToken', result.refreshToken, {
+                    httpOnly: true,
+                    secure: opts.secureCookies ?? true,
+                    sameSite: 'lax',
+                    path: '/',
+                });
                 res.redirect(mappedUrl || '/');
             } else {
                 res.status(401).json({ error: 'Failed to resolve auth code' });
@@ -44,22 +53,31 @@ export function sigauthExpress(opts: SigAuthOptions) {
 
         const refresh = await verifier.refreshOnDemand(req);
         if (refresh.ok) {
-            res.cookie('accessToken', refresh.accessToken, { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax' });
-            res.cookie('refreshToken', refresh.refreshToken, { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax' });
+            res.cookie('accessToken', refresh.accessToken, {
+                httpOnly: true,
+                secure: opts.secureCookies ?? true,
+                sameSite: 'lax',
+                path: '/',
+            });
+            res.cookie('refreshToken', refresh.refreshToken, {
+                httpOnly: true,
+                secure: opts.secureCookies ?? true,
+                sameSite: 'lax',
+                path: '/',
+            });
         }
         if (refresh.failed) {
-            res.cookie('accessToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0 });
-            res.cookie('refreshToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0 });
+            res.cookie('accessToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0, path: '/' });
+            res.cookie('refreshToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0, path: '/' });
         }
 
         const outcome = await verifier.validateRequest({
             headers: req.headers as Record<string, string | string[] | undefined>,
-            cookieHeader: req.headers['cookie'] as string | undefined,
         });
 
         if (!outcome.ok) {
-            res.cookie('accessToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0 });
-            res.cookie('refreshToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0 });
+            res.cookie('accessToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0, path: '/' });
+            res.cookie('refreshToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0, path: '/' });
             if (outcome.status === 307) {
                 waiting.set(req.ip!, req.url);
                 return res.redirect(outcome.error);
