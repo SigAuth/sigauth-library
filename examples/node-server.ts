@@ -1,5 +1,5 @@
-import http from 'http';
-import { NodeRequest, NodeResponse, sigauthNode } from '../src/middleware/node-middleware';
+import http, { IncomingMessage, Server, ServerResponse } from 'http';
+import { sigauthNode } from '../src/middleware/node-middleware';
 import { PermissionBuilder } from '../src/core/permission.builder';
 
 const handler = sigauthNode({
@@ -11,17 +11,17 @@ const handler = sigauthNode({
     secureCookies: false, // for local testing without HTTPS
 });
 
-const server = http.createServer(async (req: NodeRequest, res: NodeResponse) => {
-    const failed = await handler(req, res);
-    if (failed) return;
+const server = http.createServer(async (req: IncomingMessage, res: ServerResponse) => {
+    const result = await handler(req, res);
+    if (result.closed) return;
 
     if (!req.url?.startsWith('/protected')) {
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ ok: true, message: 'Unprotected Route' }));
     } else {
-        const user = req.user;
+        const user = result.user;
 
-        const hasReadPermission = await req.sigauth?.hasPermission(
+        const hasReadPermission = await result.sigauth?.hasPermission(
             new PermissionBuilder('read', 3).withAssetId(10).withContainerId(5).build(),
         );
         res.writeHead(200, { 'content-type': 'application/json' });

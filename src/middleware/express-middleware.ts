@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { SigauthVerifier } from '../core/verifier';
-import type { SigAuthOptions, VerifyResult } from '../types';
+import { SigauthVerifier } from '@/core/verifier';
+import type { SigAuthHandlerResponse, SigAuthOptions, VerifyResult } from '@/types';
 
 declare global {
     namespace Express {
@@ -15,7 +15,7 @@ export function sigauthExpress(opts: SigAuthOptions) {
     const verifier = new SigauthVerifier(opts);
     const waiting: Map<string, string> = new Map();
 
-    return async function (req: Request, res: Response, next: Function) {
+    return async function (req: Request, res: Response, next: Function): Promise<SigAuthHandlerResponse> {
         if (req.url.startsWith('/sigauth/oidc/auth')) {
             const code = req.query.code as string | undefined;
             const result = await verifier.resolveAuthCode(code || '');
@@ -39,7 +39,7 @@ export function sigauthExpress(opts: SigAuthOptions) {
             } else {
                 res.status(401).json({ error: 'Failed to resolve auth code' });
             }
-            return;
+            return { closed: true, user: null, sigauth: verifier };
         }
 
         if (
@@ -48,7 +48,8 @@ export function sigauthExpress(opts: SigAuthOptions) {
                 return regex.test(req.path);
             })
         ) {
-            return next();
+            next();
+            return { closed: false, user: null, sigauth: verifier };
         }
 
         const refresh = await verifier.refreshOnDemand(req);
@@ -80,15 +81,18 @@ export function sigauthExpress(opts: SigAuthOptions) {
             res.cookie('refreshToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0, path: '/' });
             if (outcome.status === 307) {
                 waiting.set(req.ip!, req.url);
-                return res.redirect(outcome.error);
+                res.redirect(outcome.error);
+                return { closed: true, user: null, sigauth: verifier };
             }
         }
 
         req.sigauth = verifier;
         if (outcome.ok) {
             req.user = outcome.user;
-            return next();
+            next();
+            return { closed: false, user: outcome.user, sigauth: verifier };
         }
         res.status(outcome.status).json({ error: outcome.error });
+        return { closed: true, user: null, sigauth: verifier };
     };
 }

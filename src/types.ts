@@ -1,3 +1,4 @@
+import { SigauthVerifier } from '@/core/verifier';
 import { JWTPayload } from 'jose';
 
 export interface SigAuthOptions {
@@ -30,6 +31,12 @@ export interface SigAuthOptions {
 }
 
 export type JSONSerializable = string | number | boolean | null | { [key: string]: JSONSerializable } | JSONSerializable[];
+
+export type SigAuthHandlerResponse = {
+    closed: boolean;
+    user: SigAuthUser | null;
+    sigauth: SigauthVerifier | null;
+};
 
 export interface SigAuthUser extends JWTPayload {
     sub: string;

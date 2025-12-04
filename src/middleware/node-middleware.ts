@@ -1,23 +1,13 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import { URL } from 'url';
-import { MinimalRequestLike, SigauthVerifier } from '../core/verifier';
-import type { SigAuthOptions, SigAuthUser, VerifyOutcome } from '../types';
-
-// A minimal request/response shape to keep this usable with custom servers as well
-export interface NodeRequest extends IncomingMessage {
-    user?: SigAuthUser;
-    sigauth?: SigauthVerifier;
-}
-
-export interface NodeResponse extends ServerResponse {
-    setHeader(name: string, value: number | string | readonly string[]): this;
-}
+import { SigauthVerifier } from '@/core/verifier';
+import type { SigAuthHandlerResponse, SigAuthOptions, VerifyOutcome } from '@/types';
 
 /**
  * Helper: set a cookie header (append-friendly).
  */
 function setCookie(
-    res: NodeResponse,
+    res: ServerResponse,
     name: string,
     value: string,
     opts: { httpOnly?: boolean; secure?: boolean; sameSite?: 'lax' | 'strict' | 'none'; maxAge?: number } = {},
@@ -46,7 +36,7 @@ function setCookie(
 /**
  * Helper: send JSON response (simple, no streaming).
  */
-function sendJson(res: NodeResponse, status: number, body: unknown) {
+function sendJson(res: ServerResponse, status: number, body: unknown) {
     if (res.writableEnded) return;
     const data = Buffer.from(JSON.stringify(body));
     res.statusCode = status;
@@ -58,7 +48,7 @@ function sendJson(res: NodeResponse, status: number, body: unknown) {
 /**
  * Helper: redirect response.
  */
-function redirect(res: NodeResponse, location: string, status: number = 307) {
+function redirect(res: ServerResponse, location: string, status: number = 307) {
     if (res.writableEnded) return;
     res.statusCode = status;
     res.setHeader('Location', location);
@@ -87,7 +77,7 @@ export function sigauthNode(opts: SigAuthOptions) {
     const verifier = new SigauthVerifier(opts);
     const waiting: Map<string, string> = new Map();
 
-    return async function (req: NodeRequest, res: NodeResponse): Promise<boolean> {
+    return async function (req: IncomingMessage, res: ServerResponse): Promise<SigAuthHandlerResponse> {
         const { url, query } = getUrlAndQuery(req);
 
         // OIDC callback endpoint
@@ -111,10 +101,10 @@ export function sigauthNode(opts: SigAuthOptions) {
                 });
 
                 redirect(res, mappedUrl || '/');
-                return true;
+                return { closed: true, user: null, sigauth: verifier };
             } else {
                 sendJson(res, 401, { error: 'Failed to resolve auth code' });
-                return true;
+                return { closed: true, user: null, sigauth: verifier };
             }
         }
 
@@ -127,7 +117,7 @@ export function sigauthNode(opts: SigAuthOptions) {
 
         if (!needsAuth) {
             // no auth required for this route
-            return false;
+            return { closed: false, user: null, sigauth: verifier };
         }
 
         const refresh = await verifier.refreshOnDemand(req);
@@ -182,15 +172,13 @@ export function sigauthNode(opts: SigAuthOptions) {
                 const ip = (req.socket && req.socket.remoteAddress) || 'unknown';
                 waiting.set(ip, url.pathname + (url.search || ''));
                 redirect(res, outcome.error, 307);
-                return true;
+                return { closed: true, user: null, sigauth: verifier };
             }
 
             sendJson(res, outcome.status, { error: outcome.error });
-            return true;
+            return { closed: true, user: null, sigauth: verifier };
         }
 
-        req.sigauth = verifier;
-        req.user = outcome.user;
-        return false;
+        return { closed: false, user: outcome.user, sigauth: verifier };
     };
 }
