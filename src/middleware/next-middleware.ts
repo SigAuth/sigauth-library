@@ -1,65 +1,73 @@
 import { SigauthVerifier } from '@/core/verifier';
 import { SigAuthHandlerResponse, SigAuthOptions } from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
-export function sigauthNext(opts: SigAuthOptions) {
-    const verifier = new SigauthVerifier(opts);
-    const waiting: Map<string, string> = new Map();
+/**
+ * Singleton wrapper to use SigauthVerifier within Next.js applications
+ * Supports both API routes and server components
+ * Make sure to always provide the options if you don't can't guarantee the singleton has been initialized
+ */
+export class SigAuthNextWrapper {
+    private static instance: SigAuthNextWrapper | null = null;
+    verifier: SigauthVerifier;
 
-    // Helper to manage cookies via headers
-    const setAuthCookies = (res: NextApiResponse, access: string, refresh: string) => {
-        const secure = opts.secureCookies ?? true;
-        const cookies = [
-            `accessToken=${access}; Path=/; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`,
-            `refreshToken=${refresh}; Path=/; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`,
-        ];
-        res.setHeader('Set-Cookie', cookies);
-    };
+    private constructor(opts: SigAuthOptions) {
+        this.verifier = new SigauthVerifier(opts);
+    }
 
-    const clearAuthCookies = (res: NextApiResponse) => {
-        const secure = opts.secureCookies ?? true;
-        const cookies = [
-            `accessToken=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? '; Secure' : ''}`,
-            `refreshToken=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? '; Secure' : ''}`,
-        ];
-        res.setHeader('Set-Cookie', cookies);
-    };
-
-    const getIp = (req: NextApiRequest) => {
-        const forwarded = req.headers['x-forwarded-for'];
-        return typeof forwarded === 'string' ? forwarded.split(',')[0] : req.socket.remoteAddress || 'unknown';
-    };
-
-    return async function (req: NextApiRequest, res: NextApiResponse): Promise<SigAuthHandlerResponse> {
-        const url = req.url || '';
-        const path = url.split('?')[0];
-        const ip = getIp(req);
-
-        if (path.startsWith('/sigauth/oidc/auth')) {
-            const code = req.query.code as string | undefined;
-            const result = await verifier.resolveAuthCode(code || '');
-            const mappedUrl = waiting.get(ip);
-            waiting.delete(ip);
-
-            if (result.ok) {
-                setAuthCookies(res, result.accessToken, result.refreshToken);
-                res.redirect(mappedUrl || '/');
-            } else {
-                res.status(401).json({ error: 'Failed to resolve auth code' });
-            }
-            return { closed: true, user: null, sigauth: verifier };
+    static getInstance(opts?: SigAuthOptions): SigAuthNextWrapper {
+        if (!this.instance) {
+            if (!opts) throw new Error('SigAuthNextWrapper not initialized. Please provide options on first getInstance call.');
+            this.instance = new SigAuthNextWrapper(opts);
         }
+        return this.instance;
+    }
 
-        // Check if route needs authentication
-        const isProtected = opts.authenticateRoutes.some(pattern => {
-            const regex = new RegExp('^' + pattern.replace('*', '.*') + '$');
-            return regex.test(path);
-        });
+    /**
+     * Use this method to authenticate the user within an API route
+     */
+    async handleApiEnvironment(req: NextApiRequest, res: NextApiResponse): Promise<SigAuthHandlerResponse> {
+        return this.handle(
+            (name, value, options) => {
+                res.setHeader(
+                    'Set-Cookie',
+                    `${name}=${value}; Path=/; HttpOnly${options?.secure ? '; Secure' : ''}${
+                        options?.maxAge ? `; Max-Age=${options.maxAge}` : ''
+                    }`,
+                );
+            },
+            (url: string) => {
+                res.writeHead(302, { location: url });
+                res.end();
+            },
+            req.url || '',
+            (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '',
+        );
+    }
 
-        if (!isProtected) {
-            return { closed: false, user: null, sigauth: verifier }; // Continue with request
-        }
+    /**
+     * Use this method authenticate the user within a server componenet
+     */
+    async handleServerEnvironment(): Promise<SigAuthHandlerResponse> {
+        return this.handle(
+            async (name, value, options) => {
+                const cookieStore = await cookies();
+                cookieStore.set(name, value, options);
+            },
+            redirect,
+            '',
+            '',
+        ); // URL and IP are not available in server components because they run on the server
+    }
 
-        return { closed: false, user: null, sigauth: verifier };
-    };
+    private async handle(
+        setCookie: (name: string, value: string, options?: any) => void,
+        redirect: (url: string) => void,
+        url: string,
+        ip: string,
+    ): Promise<SigAuthHandlerResponse> {
+        return { closed: false, user: null, sigauth: this.verifier };
+    }
 }
