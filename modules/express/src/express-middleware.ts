@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import { SigAuthHandlerResponse, SigAuthOptions, SigauthVerifier, VerifyResult } from '@sigauth/core';
+import { SigAuthHandlerResponse, SigAuthOptions, SigAuthUser, SigauthVerifier } from '@sigauth/core';
 
 declare global {
     namespace Express {
         interface Request {
             sigauth: SigauthVerifier;
-            user: VerifyResult['user'];
+            user: SigAuthUser;
         }
     }
 }

@@ -1,7 +1,6 @@
+import { SigAuthHandlerResponse, SigAuthOptions, SigauthVerifier, VerifyOutcome } from '@sigauth/core';
 import type { IncomingMessage, ServerResponse } from 'http';
 import { URL } from 'url';
-import { SigauthVerifier } from '@/core/verifier';
-import type { SigAuthHandlerResponse, SigAuthOptions, VerifyOutcome } from '@/types';
 
 /**
  * Helper: set a cookie header (append-friendly).

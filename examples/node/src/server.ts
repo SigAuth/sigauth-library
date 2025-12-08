@@ -1,6 +1,5 @@
-import http, { IncomingMessage, Server, ServerResponse } from 'http';
-import { sigauthNode } from '../src/middleware/node-middleware';
-import { PermissionBuilder } from '../src/core/permission.builder';
+import { PermissionBuilder, sigauthNode } from '@sigauth/node';
+import http, { IncomingMessage, ServerResponse } from 'http';
 
 const handler = sigauthNode({
     issuer: 'http://localhost:5173',
