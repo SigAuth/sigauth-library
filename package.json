@@ -1,5 +1,6 @@
 {
-    "name": "@sigauth/library",
+    "name": "@sigauth/library-wrapper",
+    "private": true,
     "version": "0.1.0",
     "type": "module",
     "description": "Middleware for lifting SigAuth authentication and authorization.",
@@ -38,4 +39,3 @@
         "typescript": "^5.9.3"
     }
 }
-
