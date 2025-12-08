@@ -48,7 +48,7 @@ server.listen(3000);
 
 ## Features
 
--   **Framework Agnostic**: Works with the standard Node.js `http` module.
--   **Cookie Management**: Helper functions to set and manage authentication cookies.
--   **Route Protection**: Configurable route protection patterns.
--   **OIDC Support**: Handles the authentication flow and token exchange.
+- **Framework Agnostic**: Works with the standard Node.js `http` module.
+- **Cookie Management**: Helper functions to set and manage authentication cookies.
+- **Route Protection**: Configurable route protection patterns.
+- **OIDC Support**: Handles the authentication flow and token exchange.

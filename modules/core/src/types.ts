@@ -23,7 +23,7 @@ export interface SigAuthOptions {
     // Custom token extractor; return the raw token string or null if none
     getToken?: (req: unknown) => string | null;
     // List of routes that require authentication
-    authenticateRoutes: string[];
+    authenticateRoutes?: string[];
     // Automatic token refresh threshold in seconds (default 120s)
     refreshThresholdSeconds?: number;
     // Wether cookies should be secure (i.e., sent only over HTTPS). Default: true

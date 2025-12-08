@@ -24,7 +24,7 @@ app.use(
         clientId: 'your-client-id',
         authenticateRoutes: ['/protected/*'],
         // ... other options
-    })
+    }),
 );
 
 app.get('/protected/resource', (req, res) => {
@@ -38,7 +38,7 @@ app.listen(3000);
 
 ## Features
 
--   **Automatic Authentication**: Intercepts requests to protected routes and redirects to the auth provider if necessary.
--   **Token Management**: Handles access and refresh tokens via cookies.
--   **Request Augmentation**: Adds `req.user` and `req.sigauth` to the Express request object for easy access to user data and verifier methods.
--   **OIDC Callback Handling**: Automatically handles the OIDC callback route (`/sigauth/oidc/auth`).
+- **Automatic Authentication**: Intercepts requests to protected routes and redirects to the auth provider if necessary.
+- **Token Management**: Handles access and refresh tokens via cookies.
+- **Request Augmentation**: Adds `req.user` and `req.sigauth` to the Express request object for easy access to user data and verifier methods.
+- **OIDC Callback Handling**: Automatically handles the OIDC callback route (`/sigauth/oidc/auth`).

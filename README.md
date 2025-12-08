@@ -2,8 +2,8 @@
 
 Simple middleware/utilities to verify SigAuth-issued JWTs in Node.js environments.
 
--   Framework-agnostic verifier (`verifyRequest`, `withSigAuth`)
--   Express middleware (`sigAuthExpress`)
+- Framework-agnostic verifier (`verifyRequest`, `withSigAuth`)
+- Express middleware (`sigAuthExpress`)
 
 ## Install
 
@@ -28,7 +28,7 @@ app.use(
     sigAuthExpress({
         issuer: process.env.SIGAUTH_ISSUER!,
         audience: process.env.SIGAUTH_AUDIENCE,
-    })
+    }),
 );
 
 app.get('/protected', (req, res) => {
@@ -50,7 +50,7 @@ const handler = withSigAuth(
     {
         issuer: process.env.SIGAUTH_ISSUER!,
         audience: process.env.SIGAUTH_AUDIENCE,
-    }
+    },
 );
 
 http.createServer(handler).listen(3000);
@@ -58,14 +58,14 @@ http.createServer(handler).listen(3000);
 
 ## Options
 
--   issuer: string (required)
--   audience: string | string[] (optional)
--   jwksUri: string (optional, defaults to `${issuer}/.well-known/jwks.json`)
--   tokenHeader: string (default: "Authorization")
--   tokenCookie: string (default: "sigauth_token")
--   algorithms: string[] (optional)
--   leewaySeconds: number (default: 5)
--   getToken(req): custom extractor
+- issuer: string (required)
+- audience: string | string[] (optional)
+- jwksUri: string (optional, defaults to `${issuer}/.well-known/jwks.json`)
+- tokenHeader: string (default: "Authorization")
+- tokenCookie: string (default: "sigauth_token")
+- algorithms: string[] (optional)
+- leewaySeconds: number (default: 5)
+- getToken(req): custom extractor
 
 ## Testing locally
 

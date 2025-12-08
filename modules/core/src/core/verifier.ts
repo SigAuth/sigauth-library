@@ -52,7 +52,7 @@ export class SigauthVerifier {
 
             const cookieString = Array.isArray(raw) ? raw.join('; ') : raw || '';
             const cookies = this.parseCookies(cookieString);
-            if (!cookies['accessToken'] || !cookies['refreshToken']) return { ok: false, status: 401, error: 'Missing tokens' };
+            if (!cookies['accessToken'] || !cookies['refreshToken']) return { ok: true, status: 401, error: 'Missing tokens' };
 
             const jwksRes = await this.request('GET', `${this.opts.issuer}/.well-known/jwks.json`);
             const jwks = await jwksRes.json();
@@ -82,6 +82,7 @@ export class SigauthVerifier {
         req: MinimalRequestLike,
     ): Promise<{ ok: boolean; failed?: boolean; accessToken?: string; refreshToken?: string }> {
         if (!(await this.initTokens(req)).ok) return { ok: false, failed: true };
+        if (!this.accessToken || !this.refreshToken) return { ok: false, failed: false }; // no tokens available
         if (this.accessTokenExpires! - Date.now() / 1000 > (this.opts.refreshThresholdSeconds ?? 120)) return { ok: false }; // skip if more than 2 minutes left
 
         const res = await this.request(

@@ -10,9 +10,9 @@ pnpm add @sigauth/core
 
 ## Features
 
--   **JWT Verification**: Validates access tokens and handles token refreshing using `jose`.
--   **Permission Building**: A fluent API for constructing standardized permission strings.
--   **OIDC Integration**: Core logic for handling OIDC authentication flows.
+- **JWT Verification**: Validates access tokens and handles token refreshing using `jose`.
+- **Permission Building**: A fluent API for constructing standardized permission strings.
+- **OIDC Integration**: Core logic for handling OIDC authentication flows.
 
 ## Usage
 

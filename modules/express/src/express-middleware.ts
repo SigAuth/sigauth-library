@@ -42,7 +42,7 @@ export function sigauthExpress(opts: SigAuthOptions) {
         }
 
         if (
-            !opts.authenticateRoutes.some(patteren => {
+            !opts.authenticateRoutes?.some(patteren => {
                 const regex = new RegExp('^' + patteren.replace('*', '.*') + '$');
                 return regex.test(req.path);
             })
