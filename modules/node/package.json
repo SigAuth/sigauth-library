@@ -1,6 +1,6 @@
 {
     "name": "@sigauth/node",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "SigAuth Node.Js Integration for lifting authentication and authorization",
     "keywords": [
         "sigauth",

@@ -1,6 +1,6 @@
 {
     "name": "@sigauth/core",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "SigAuth Integrations Core for lifting authentication and authorization",
     "keywords": [
         "sigauth",
@@ -32,4 +32,3 @@
         "jose": "^6.1.3"
     }
 }
-
