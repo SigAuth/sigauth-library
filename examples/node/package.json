@@ -1,6 +1,7 @@
 {
     "name": "@sigauth/node-example",
     "version": "0.1.0",
+    "private": true,
     "description": "Showcase example for SigAuth Node Integration",
     "keywords": [
         "sigauth",

@@ -12,7 +12,8 @@
         "url": "https://github.com/SigAuth/sigauth-library"
     },
     "scripts": {
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "publish": "pnpm run -r build && pnpm -r publish --access public"
     },
     "keywords": [
         "sigauth",

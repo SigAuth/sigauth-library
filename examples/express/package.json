@@ -1,6 +1,7 @@
 {
     "name": "@sigauth/express-example",
     "version": "0.1.0",
+    "private": true,
     "description": "Showcase example for SigAuth Express Integration",
     "keywords": [
         "sigauth",
@@ -35,3 +36,4 @@
         "tsx": "^4.21.0"
     }
 }
+
