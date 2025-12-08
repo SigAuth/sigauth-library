@@ -1,6 +1,6 @@
 import { importJWK, JWTPayload, jwtVerify } from 'jose';
-import type { JSONSerializable, SigAuthOptions, SigAuthUser, VerifyOutcome } from '@/types';
 import { PermissionBuilder } from './permission.builder';
+import { JSONSerializable, SigAuthOptions, SigAuthUser, VerifyOutcome } from '../types';
 
 export interface MinimalRequestLike {
     headers?: Record<string, string | string[] | undefined>;

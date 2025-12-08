@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
-import { SigauthVerifier } from '@/core/verifier';
-import type { SigAuthHandlerResponse, SigAuthOptions, VerifyResult } from '@/types';
+import { SigAuthHandlerResponse, SigAuthOptions, SigauthVerifier, VerifyResult } from '@sigauth/core';
 
 declare global {
     namespace Express {

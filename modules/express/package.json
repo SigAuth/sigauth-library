@@ -1,0 +1,38 @@
+{
+    "name": "@sigauth/express",
+    "version": "0.1.0",
+    "description": "SigAuth Express Integration for lifting authentication and authorization",
+    "keywords": [
+        "sigauth",
+        "express",
+        "authentication",
+        "authorization",
+        "oauth2",
+        "oidc"
+    ],
+    "bugs": {
+        "url": "https://github.com/SigAuth/sigauth-library/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/SigAuth/sigauth-library.git"
+    },
+    "license": "MIT",
+    "author": "Ben Hacker",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "homepage": "https://sigauth.org",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "tsc -b tsconfig.json"
+    },
+    "dependencies": {
+        "@sigauth/core": "workspace:^0.1.0",
+        "express": "^5.2.1"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.6"
+    }
+}

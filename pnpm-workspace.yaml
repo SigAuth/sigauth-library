@@ -1,2 +1,7 @@
+packages:
+  - modules/*
+  - examples/*
+
 onlyBuiltDependencies:
   - esbuild
+
