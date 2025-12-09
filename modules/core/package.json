@@ -1,6 +1,6 @@
 {
     "name": "@sigauth/core",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "description": "SigAuth Integrations Core for lifting authentication and authorization",
     "keywords": [
         "sigauth",
@@ -29,6 +29,8 @@
         "build": "tsc -b tsconfig.json"
     },
     "dependencies": {
+        "@sigauth/generics": "^0.1.5",
         "jose": "^6.1.3"
     }
 }
+

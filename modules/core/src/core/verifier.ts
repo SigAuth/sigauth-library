@@ -1,6 +1,7 @@
 import { importJWK, JWTPayload, jwtVerify } from 'jose';
 import { PermissionBuilder } from './permission.builder';
 import { JSONSerializable, SigAuthOptions, SigAuthUser, VerifyOutcome } from '../types';
+import { AppInfo } from '@sigauth/generics/json-types';
 
 export interface MinimalRequestLike {
     headers?: Record<string, string | string[] | undefined>;
@@ -104,8 +105,11 @@ export class SigauthVerifier {
         }
     }
 
-    async resolveAuthCode(code: string): Promise<{ ok: boolean; refreshToken: string; accessToken: string }> {
-        const res = await this.request('GET', `${this.opts.issuer}/api/auth/oidc/exchange?code=${code}&app-token=${this.opts.appToken}`);
+    async resolveAuthCode(code: string, redirectUri: string): Promise<{ ok: boolean; refreshToken: string; accessToken: string }> {
+        const res = await this.request(
+            'GET',
+            `${this.opts.issuer}/api/auth/oidc/exchange?code=${code}&app-token=${this.opts.appToken}&redirect-uri=${redirectUri}`,
+        );
         const data = await res.json();
 
         if (!res.ok) {
@@ -132,11 +136,11 @@ export class SigauthVerifier {
         return { ok: true, refreshToken: data.refreshToken, accessToken: data.accessToken };
     }
 
-    async validateRequest(req: MinimalRequestLike): Promise<VerifyOutcome> {
+    async validateRequest(req: MinimalRequestLike, redirectUri: string): Promise<VerifyOutcome> {
         await this.initTokens(req);
 
         if (!this.decodedAccessToken || !this.refreshToken) {
-            return { ok: false, status: 307, error: `${this.opts.issuer}/auth/oidc?appId=${this.opts.appId}` };
+            return { ok: false, status: 307, error: `${this.opts.issuer}/auth/oidc?appId=${this.opts.appId}&redirectUri=${redirectUri}` };
         }
 
         if (!this.decodedAccessToken) {
@@ -153,6 +157,11 @@ export class SigauthVerifier {
         return { ok: true, user: this.user };
     }
 
+    /**
+     * This method only works within an authenticated context (i.e. after validateRequest has been called)
+     *
+     * @returns Whether the user has the specified permission
+     */
     async hasPermission(permissionBuilder: PermissionBuilder): Promise<boolean>;
     async hasPermission(permission: string): Promise<boolean>;
     async hasPermission(arg: PermissionBuilder | string): Promise<boolean> {
@@ -169,6 +178,11 @@ export class SigauthVerifier {
         return res.ok;
     }
 
+    /**
+     * This method only works within an authenticated context (i.e. after validateRequest has been called)
+     *
+     * @returns All assets, containers etc that the user is allowed to see
+     */
     async getUserInfo() {
         if (!this.accessToken) {
             throw new Error('No access token available');
@@ -187,6 +201,10 @@ export class SigauthVerifier {
         return data;
     }
 
+    /**
+     *
+     * @returns All assets, containers and accounts that are related to the app
+     */
     async getAppInfo() {
         const res = await this.request('GET', `${this.opts.issuer}/api/app/info?appToken=${this.opts.appToken}`);
         const data = await res.json();
@@ -195,6 +213,6 @@ export class SigauthVerifier {
             return undefined;
         }
 
-        return data;
+        return data as AppInfo;
     }
 }

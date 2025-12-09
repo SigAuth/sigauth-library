@@ -12,14 +12,12 @@ declare global {
 
 export function sigauthExpress(opts: SigAuthOptions) {
     const verifier = new SigauthVerifier(opts);
-    const waiting: Map<string, string> = new Map();
 
     return async function (req: Request, res: Response, next: Function): Promise<SigAuthHandlerResponse> {
         if (req.url.startsWith('/sigauth/oidc/auth')) {
             const code = req.query.code as string | undefined;
-            const result = await verifier.resolveAuthCode(code || '');
-            const mappedUrl = waiting.get(req.ip!);
-            waiting.delete(req.ip!);
+            const redirectUri = req.query.redirectUri as string | undefined;
+            const result = await verifier.resolveAuthCode(code || '', redirectUri || '');
 
             if (result.ok) {
                 res.cookie('accessToken', result.accessToken, {
@@ -34,7 +32,7 @@ export function sigauthExpress(opts: SigAuthOptions) {
                     sameSite: 'lax',
                     path: '/',
                 });
-                res.redirect(mappedUrl || '/');
+                res.redirect(redirectUri || '/');
             } else {
                 res.status(401).json({ error: 'Failed to resolve auth code' });
             }
@@ -71,15 +69,17 @@ export function sigauthExpress(opts: SigAuthOptions) {
             res.cookie('refreshToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0, path: '/' });
         }
 
-        const outcome = await verifier.validateRequest({
-            headers: req.headers as Record<string, string | string[] | undefined>,
-        });
+        const outcome = await verifier.validateRequest(
+            {
+                headers: req.headers as Record<string, string | string[] | undefined>,
+            },
+            req.url,
+        );
 
         if (!outcome.ok) {
             res.cookie('accessToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0, path: '/' });
             res.cookie('refreshToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0, path: '/' });
             if (outcome.status === 307) {
-                waiting.set(req.ip!, req.url);
                 res.redirect(outcome.error);
                 return { closed: true, user: null, sigauth: verifier };
             }

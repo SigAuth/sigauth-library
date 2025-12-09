@@ -1,6 +1,6 @@
 {
     "name": "@sigauth/express",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "SigAuth Express Integration for lifting authentication and authorization",
     "keywords": [
         "sigauth",

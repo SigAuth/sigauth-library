@@ -74,7 +74,6 @@ function getUrlAndQuery(req: IncomingMessage) {
  */
 export function sigauthNode(opts: SigAuthOptions) {
     const verifier = new SigauthVerifier(opts);
-    const waiting: Map<string, string> = new Map();
 
     return async function (req: IncomingMessage, res: ServerResponse): Promise<SigAuthHandlerResponse> {
         const { url, query } = getUrlAndQuery(req);
@@ -82,10 +81,9 @@ export function sigauthNode(opts: SigAuthOptions) {
         // OIDC callback endpoint
         if (url.pathname.startsWith('/sigauth/oidc/auth')) {
             const code = query['code'] || '';
-            const result = await verifier.resolveAuthCode(code);
+            const redirectUri = query['redirectUri'] || '';
+            const result = await verifier.resolveAuthCode(code, redirectUri);
             const ip = (req.socket && req.socket.remoteAddress) || 'unknown';
-            const mappedUrl = waiting.get(ip);
-            waiting.delete(ip);
 
             if (result.ok) {
                 setCookie(res, 'accessToken', result.accessToken, {
@@ -99,7 +97,7 @@ export function sigauthNode(opts: SigAuthOptions) {
                     sameSite: 'lax',
                 });
 
-                redirect(res, mappedUrl || '/');
+                redirect(res, redirectUri || '/');
                 return { closed: true, user: null, sigauth: verifier };
             } else {
                 sendJson(res, 401, { error: 'Failed to resolve auth code' });
@@ -109,7 +107,7 @@ export function sigauthNode(opts: SigAuthOptions) {
 
         // Route filter
         const path = url.pathname;
-        const needsAuth = opts.authenticateRoutes.some(pattern => {
+        const needsAuth = opts.authenticateRoutes?.some(pattern => {
             const regex = new RegExp('^' + pattern.replace('*', '.*') + '$');
             return regex.test(path);
         });
@@ -147,9 +145,12 @@ export function sigauthNode(opts: SigAuthOptions) {
             });
         }
 
-        const outcome: VerifyOutcome = await verifier.validateRequest({
-            headers: req.headers as Record<string, string | string[] | undefined>,
-        });
+        const outcome: VerifyOutcome = await verifier.validateRequest(
+            {
+                headers: req.headers as Record<string, string | string[] | undefined>,
+            },
+            req.url || '/',
+        );
 
         if (!outcome.ok) {
             if (!refresh.failed) {
@@ -168,8 +169,6 @@ export function sigauthNode(opts: SigAuthOptions) {
             }
 
             if (outcome.status === 307) {
-                const ip = (req.socket && req.socket.remoteAddress) || 'unknown';
-                waiting.set(ip, url.pathname + (url.search || ''));
                 redirect(res, outcome.error, 307);
                 return { closed: true, user: null, sigauth: verifier };
             }

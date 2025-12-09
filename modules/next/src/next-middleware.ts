@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ReadonlyHeaders } from 'next/dist/server/web/spec-extension/adapters/headers';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { NextRequest } from 'next/server';
 
 /**
  * Singleton wrapper to use SigauthVerifier within Next.js applications
@@ -70,20 +71,19 @@ export class SigAuthNextWrapper {
             }
         }
 
+        const h = await headers();
+        const path = h.get('referer');
+        const host = h.get('host');
+        const url = `${path?.split(host || '')[1]}`;
+
         return this.checkAuthentication(
             async (name, value, options) => {
-                try {
-                    const cookieStore = await cookies();
-                    cookieStore.set(name, value, options);
-                } catch (error) {
-                    // Cookies cannot be set in Server Components.
-                    // This is expected behavior when using checkAuthenticationFromServer.
-                    // Token refreshing should be handled in Middleware.
-                }
+                const cookieStore = await cookies();
+                cookieStore.set(name, value, options);
             },
             redirect,
             headerRecord,
-            '',
+            url,
             '',
         ); // URL and IP are not available in server components because they run on the server
     }
@@ -130,22 +130,8 @@ export class SigAuthNextWrapper {
             });
         }
 
-        const outcome = await this.verifier.validateRequest({ headers });
+        const outcome = await this.verifier.validateRequest({ headers }, url);
         if (!outcome.ok) {
-            setCookie('accessToken', '', {
-                httpOnly: true,
-                secure: this.opts.secureCookies ?? true,
-                sameSite: 'lax',
-                maxAge: 0,
-                path: '/',
-            });
-            setCookie('refreshToken', '', {
-                httpOnly: true,
-                secure: this.opts.secureCookies ?? true,
-                sameSite: 'lax',
-                maxAge: 0,
-                path: '/',
-            });
             if (outcome.status === 307) {
                 redirect(outcome.error);
                 return { closed: true, user: null, sigauth: this.verifier };
@@ -160,11 +146,12 @@ export class SigAuthNextWrapper {
         return { closed: false, user: null, sigauth: this.verifier };
     }
 
-    public async sigAuthExchange(req: NextApiRequest, res: NextApiResponse): Promise<Response> {
-        const { searchParams } = new URL(req.url || '');
+    public async sigAuthExchange(url: string): Promise<Response> {
+        const { searchParams } = new URL(url);
         const code = searchParams.get('code') || '';
+        const redirectUri = searchParams.get('redirectUri') || '';
 
-        const result = await this.verifier.resolveAuthCode(code);
+        const result = await this.verifier.resolveAuthCode(code, redirectUri);
 
         if (!result.ok) {
             return Response.json({ error: 'Failed to resolve auth code' }, { status: 401 });
@@ -177,7 +164,7 @@ export class SigAuthNextWrapper {
                     `accessToken=${result.accessToken}; Path=/; HttpOnly; SameSite=Lax`,
                     `refreshToken=${result.refreshToken}; Path=/; HttpOnly; SameSite=Lax`,
                 ].join(', '),
-                Location: '/',
+                Location: redirectUri,
             },
         });
     }
