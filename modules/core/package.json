@@ -29,7 +29,7 @@
         "build": "tsc -b tsconfig.json"
     },
     "dependencies": {
-        "@sigauth/generics": "^0.1.5",
+        "@sigauth/generics": "^0.1.7",
         "jose": "^6.1.3"
     }
 }

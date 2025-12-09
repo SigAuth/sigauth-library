@@ -12,11 +12,11 @@ import { NextRequest } from 'next/server';
  */
 export class SigAuthNextWrapper {
     private static instance: SigAuthNextWrapper | null = null;
-    verifier: SigauthVerifier;
+    private sigauth: SigauthVerifier;
     opts: SigAuthOptions;
 
     private constructor(opts: SigAuthOptions) {
-        this.verifier = new SigauthVerifier(opts);
+        this.sigauth = new SigauthVerifier(opts);
         this.opts = opts;
     }
 
@@ -96,7 +96,7 @@ export class SigAuthNextWrapper {
         ip: string,
     ): Promise<SigAuthHandlerResponse> {
         // assume this route from where this is called needs authentication
-        const refresh = await this.verifier.refreshOnDemand({ headers });
+        const refresh = await this.sigauth.refreshOnDemand({ headers });
         if (refresh.ok) {
             console.log('Setting refreshed tokens in cookies');
             setCookie('accessToken', refresh.accessToken!, {
@@ -130,20 +130,20 @@ export class SigAuthNextWrapper {
             });
         }
 
-        const outcome = await this.verifier.validateRequest({ headers }, url);
+        const outcome = await this.sigauth.validateRequest({ headers }, url);
         if (!outcome.ok) {
             if (outcome.status === 307) {
                 redirect(outcome.error);
-                return { closed: true, user: null, sigauth: this.verifier };
+                return { closed: true, user: null, sigauth: this.sigauth };
             }
         }
 
         if (outcome.ok) {
-            return { closed: false, user: outcome.user, sigauth: this.verifier };
+            return { closed: false, user: outcome.user, sigauth: this.sigauth };
         }
 
         console.error(`Authentication failed: ${outcome.error}`);
-        return { closed: false, user: null, sigauth: this.verifier };
+        return { closed: false, user: null, sigauth: this.sigauth };
     }
 
     public async sigAuthExchange(url: string): Promise<Response> {
@@ -151,7 +151,7 @@ export class SigAuthNextWrapper {
         const code = searchParams.get('code') || '';
         const redirectUri = searchParams.get('redirectUri') || '';
 
-        const result = await this.verifier.resolveAuthCode(code, redirectUri);
+        const result = await this.sigauth.resolveAuthCode(code, redirectUri);
 
         if (!result.ok) {
             return Response.json({ error: 'Failed to resolve auth code' }, { status: 401 });
@@ -167,5 +167,9 @@ export class SigAuthNextWrapper {
                 Location: redirectUri,
             },
         });
+    }
+
+    getSigAuthVerifier(): SigauthVerifier {
+        return this.sigauth;
     }
 }

@@ -1,7 +1,7 @@
 import { importJWK, JWTPayload, jwtVerify } from 'jose';
 import { PermissionBuilder } from './permission.builder';
 import { JSONSerializable, SigAuthOptions, SigAuthUser, VerifyOutcome } from '../types';
-import { AppInfo } from '@sigauth/generics/json-types';
+import { AppInfo, UserInfo } from '@sigauth/generics/json-types';
 
 export interface MinimalRequestLike {
     headers?: Record<string, string | string[] | undefined>;
@@ -198,7 +198,7 @@ export class SigauthVerifier {
             return undefined;
         }
 
-        return data;
+        return data as UserInfo;
     }
 
     /**
