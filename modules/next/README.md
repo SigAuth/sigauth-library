@@ -2,16 +2,6 @@
 
 SigAuth integration for Next.js applications. This package provides a wrapper around `@sigauth/core` to simplify authentication and authorization in Next.js Server Components, API Routes, and Middleware.
 
-## Installation
-
-```bash
-npm install @sigauth/next @sigauth/core
-# or
-pnpm add @sigauth/next @sigauth/core
-# or
-yarn add @sigauth/next @sigauth/core
-```
-
 ## Configuration
 
 First, define your SigAuth options. It is recommended to do this in a shared constants file or a configuration module.

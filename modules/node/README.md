@@ -2,12 +2,6 @@
 
 Node.js HTTP server integration for SigAuth, allowing you to add authentication and authorization to raw Node.js HTTP servers without a framework.
 
-## Installation
-
-```bash
-pnpm add @sigauth/node
-```
-
 ## Usage
 
 Wrap your request handler or use the provided middleware function.

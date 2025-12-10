@@ -2,12 +2,6 @@
 
 Express middleware integration for SigAuth, enabling easy authentication and authorization in your Express applications.
 
-## Installation
-
-```bash
-pnpm add @sigauth/express
-```
-
 ## Usage
 
 Register the middleware in your Express application.

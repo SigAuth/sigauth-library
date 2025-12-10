@@ -1,12 +1,6 @@
 # @sigauth/core
 
-The core library for SigAuth integrations, providing the fundamental logic for authentication, authorization, and permission management. This package is used by framework-specific integrations like `@sigauth/express` and `@sigauth/node`.
-
-## Installation
-
-```bash
-pnpm add @sigauth/core
-```
+The core library for SigAuth integrations, providing the fundamental logic for authentication, authorization, and permission management. This package is used by framework-specific integrations like `@sigauth/express` and `@sigauth/nest`.
 
 ## Features
 

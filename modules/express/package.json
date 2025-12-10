@@ -29,7 +29,7 @@
         "build": "tsc -b tsconfig.json"
     },
     "dependencies": {
-        "@sigauth/core": "workspace:^0.1.0",
+        "@sigauth/core": "workspace:^0.1.4",
         "express": "^5.2.1"
     },
     "devDependencies": {

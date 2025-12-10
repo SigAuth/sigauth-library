@@ -31,7 +31,7 @@
     "dependencies": {
         "@nestjs/common": "^11.1.9",
         "@nestjs/core": "^11.1.9",
-        "@sigauth/core": "workspace:^0.1.7",
+        "@sigauth/core": "workspace:^0.1.4",
         "reflect-metadata": "^0.2.2",
         "rxjs": "^7.8.2"
     },
