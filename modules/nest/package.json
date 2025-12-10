@@ -1,6 +1,6 @@
 {
     "name": "@sigauth/nest",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "SigAuth NestJs Integration for lifting authentication and authorization",
     "keywords": [
         "sigauth",
@@ -31,7 +31,7 @@
     "dependencies": {
         "@nestjs/common": "^11.1.9",
         "@nestjs/core": "^11.1.9",
-        "@sigauth/core": "workspace:^0.1.4",
+        "@sigauth/core": "workspace:^0.1.5",
         "reflect-metadata": "^0.2.2",
         "rxjs": "^7.8.2"
     },
@@ -39,4 +39,3 @@
         "@types/express": "^5.0.6"
     }
 }
-

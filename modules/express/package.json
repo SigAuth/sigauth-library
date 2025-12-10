@@ -1,6 +1,6 @@
 {
     "name": "@sigauth/express",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "description": "SigAuth Express Integration for lifting authentication and authorization",
     "keywords": [
         "sigauth",
@@ -29,7 +29,7 @@
         "build": "tsc -b tsconfig.json"
     },
     "dependencies": {
-        "@sigauth/core": "workspace:^0.1.4",
+        "@sigauth/core": "workspace:^0.1.5",
         "express": "^5.2.1"
     },
     "devDependencies": {
