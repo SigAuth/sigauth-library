@@ -3,13 +3,13 @@ import { Reflector } from '@nestjs/core';
 import { SigAuthOptions } from '@sigauth/core';
 import { Observable } from 'rxjs';
 import { ALLOW_ANONYMOUS_KEY } from '../common/util.decorators.js';
-import { AuthService } from './auth.service.js';
+import { SigAuthService } from './sigauth.service.js';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class SigAuthGuard implements CanActivate {
     constructor(
         private readonly reflector: Reflector,
-        private readonly authService: AuthService,
+        private readonly authService: SigAuthService,
         @Inject('SIGAUTH_OPTIONS') private readonly options: SigAuthOptions,
     ) {}
 

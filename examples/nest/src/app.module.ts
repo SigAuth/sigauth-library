@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from '@sigauth/nest';
+import { SigAuthModule } from '@sigauth/nest';
 
 @Module({
     imports: [
         // Configure the AuthModule with your SigAuth options
-        AuthModule.forRoot({
+        SigAuthModule.forRoot({
             issuer: 'http://localhost:5173',
             audience: 'Nest JS',
             appId: 5, // Replace with your actual appId

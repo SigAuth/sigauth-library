@@ -64,18 +64,18 @@ bootstrap();
 ```typescript
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { AuthGuard, AuthModule } from '@sigauth/nest';
+import { SigAuthGuard, SigAuthModule } from '@sigauth/nest';
 
 @Module({
     imports: [
-        AuthModule.forRoot({
+        SigAuthModule.forRoot({
             /* options */
         }),
     ],
     providers: [
         {
             provide: APP_GUARD,
-            useClass: AuthGuard,
+            useClass: SigAuthGuard,
         },
     ],
 })
@@ -102,7 +102,7 @@ export class PublicController {
 
 ## Endpoints
 
-The `AuthModule` automatically registers an `AuthController` which exposes the following endpoints:
+The `SigAuthModule` automatically registers an `SigAuthController` which exposes the following endpoints:
 
 - `GET /sigauth/oidc/auth`: Handles the OIDC authorization code exchange.
 

@@ -3,7 +3,7 @@ import { SigAuthOptions, SigauthVerifier } from '@sigauth/core';
 import { CookieOptions, Response } from 'express';
 
 @Injectable()
-export class AuthService {
+export class SigAuthService {
     private readonly sigauth: SigauthVerifier;
 
     constructor(@Inject('SIGAUTH_OPTIONS') private readonly options: SigAuthOptions) {

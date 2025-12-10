@@ -1,14 +1,14 @@
 import { Controller, Get, Inject, Query, Res } from '@nestjs/common';
 import { SigAuthOptions } from '@sigauth/core';
-import { AuthService } from './auth.service.js';
+import { SigAuthService } from './sigauth.service.js';
 import { Response } from 'express';
 import { AllowAnonymous } from '../common/util.decorators.js';
 
 @Controller('sigauth')
-export class AuthController {
+export class SigAuthController {
     constructor(
         @Inject('SIGAUTH_OPTIONS') private readonly options: SigAuthOptions,
-        private readonly authService: AuthService,
+        private readonly authService: SigAuthService,
     ) {}
 
     @Get('oidc/auth')

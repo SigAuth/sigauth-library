@@ -1,10 +1,10 @@
-import { AuthModule } from './modules/auth.module.js';
-import { AuthController } from './modules/auth.controller.js';
-import { AuthService } from './modules/auth.service.js';
-import { AuthGuard } from './modules/auth.guard.js';
+import { SigAuthModule } from './modules/sigauth.module.js';
+import { SigAuthController } from './modules/sigauth.controller.js';
+import { SigAuthService } from './modules/sigauth.service.js';
+import { SigAuthGuard } from './modules/sigauth.guard.js';
 
 // Auth module components
-export { AuthModule, AuthController, AuthService, AuthGuard };
+export { SigAuthModule, SigAuthController, SigAuthService, SigAuthGuard };
 export * from '@sigauth/core';
 
 // Decorators
