@@ -1,6 +1,6 @@
 {
     "name": "@sigauth/next",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "description": "SigAuth Next.js Integration for lifting authentication and authorization",
     "keywords": [
         "sigauth",

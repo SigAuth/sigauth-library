@@ -27,32 +27,9 @@ export class SigAuthNextWrapper {
     }
 
     /**
-     * Use this method to authenticate the user within an API route
-     */
-    async checkAuthenticationFromApi(req: NextApiRequest, res: NextApiResponse): Promise<SigAuthHandlerResponse> {
-        return this.checkAuthentication(
-            (name, value, options) => {
-                res.setHeader(
-                    'Set-Cookie',
-                    `${name}=${value}; Path=/; HttpOnly${options?.secure ? '; Secure' : ''}${
-                        options?.maxAge ? `; Max-Age=${options.maxAge}` : ''
-                    }`,
-                );
-            },
-            (url: string) => {
-                res.writeHead(302, { location: url });
-                res.end();
-            },
-            req.headers,
-            req.url || '',
-            (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '',
-        );
-    }
-
-    /**
      * Use this method authenticate the user within a server componenet
      */
-    async checkAuthenticationFromServer(): Promise<SigAuthHandlerResponse> {
+    async checkAuthentication(redirectUrl: string): Promise<SigAuthHandlerResponse> {
         const headerList = await headers();
         const headerRecord: Record<string, string | string[] | undefined> = {};
 
@@ -69,32 +46,12 @@ export class SigAuthNextWrapper {
             }
         }
 
-        const h = await headers();
-        const path = h.get('referer');
-        const host = h.get('host');
-        const url = `${path?.split(host || '')[1]}`;
+        const setCookie = async (name: string, value: string, options?: any) => {
+            const cookieStore = await cookies();
+            cookieStore.set(name, value, options);
+        };
 
-        return this.checkAuthentication(
-            async (name, value, options) => {
-                const cookieStore = await cookies();
-                cookieStore.set(name, value, options);
-            },
-            redirect,
-            headerRecord,
-            url,
-            '',
-        ); // URL and IP are not available in server components because they run on the server
-    }
-
-    private async checkAuthentication(
-        setCookie: (name: string, value: string, options?: any) => void,
-        redirect: (url: string) => void,
-        headers: Record<string, string | string[] | undefined>,
-        url: string,
-        ip: string,
-    ): Promise<SigAuthHandlerResponse> {
-        // assume this route from where this is called needs authentication
-        const refresh = await this.sigauth.refreshOnDemand({ headers });
+        const refresh = await this.sigauth.refreshOnDemand({ headers: headerRecord });
         if (refresh.ok) {
             console.log('Setting refreshed tokens in cookies');
             setCookie('accessToken', refresh.accessToken!, {
@@ -128,7 +85,7 @@ export class SigAuthNextWrapper {
             });
         }
 
-        const outcome = await this.sigauth.validateRequest({ headers }, url);
+        const outcome = await this.sigauth.validateRequest({ headers: headerRecord }, redirectUrl);
         if (!outcome.ok) {
             if (outcome.status === 307) {
                 redirect(outcome.error);

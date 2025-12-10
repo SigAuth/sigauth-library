@@ -22,16 +22,14 @@ export const SIGAUTH_OPTIONS: SigAuthOptions = {
 
 ### Initialization
 
-The `SigAuthNextWrapper` is a singleton. You should initialize it once, typically in a helper function or when you first use it.
+The `SigAuthNextWrapper` is a singleton. You should initialize it once (recommended in root layout), typically in a helper function or when you first use it.
 
 ```typescript
 // lib/auth.ts
 import { SigAuthNextWrapper } from '@sigauth/next';
-import { SIGAUTH_OPTIONS } from '@/utils/constants';
 
 export async function checkAuth() {
-    // Initialize on first use if not already done
-    return await SigAuthNextWrapper.getInstance(SIGAUTH_OPTIONS).checkAuthenticationFromServer();
+    return await SigAuthNextWrapper.getInstance().checkAuthentication();
 }
 ```
 
@@ -40,12 +38,11 @@ export async function checkAuth() {
 Protect your Server Components by calling the check function. This will handle token validation, refreshing, and redirection to the login page if necessary.
 
 ```typescript
-// app/protected/page.tsx
 import { checkAuth } from '@/lib/auth'; // Your helper
 import { PermissionBuilder } from '@sigauth/next';
 
 export default async function ProtectedPage() {
-    const { user, sigauth } = await checkAuth();
+    const { user, sigauth } = await checkAuth("<your route>");
 
     // Check permissions
     const hasPermission = await sigauth?.hasPermission(
@@ -66,7 +63,7 @@ export default async function ProtectedPage() {
 Set up a route handler to handle the OIDC callback code exchange.
 
 ```typescript
-// app/api/auth/callback/route.ts
+// app/api/sigauth/oidc/auth/route.ts
 import { SigAuthNextWrapper } from '@sigauth/next';
 import { SIGAUTH_OPTIONS } from '@/utils/constants';
 import { NextRequest } from 'next/server';
@@ -77,7 +74,24 @@ export async function GET(request: NextRequest) {
 }
 ```
 
-## API
+### API Routes
+
+In the **App Router** they share the same logic meaning you can use the `checkAuthenticate()` method the same way as before.
+
+```typescript title="app/api/example/route.ts"
+import { SIGAUTH_OPTIONS } from '@/utils/constants';
+import { SigAuthNextWrapper } from '@sigauth/next';
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function GET(req: NextRequest) {
+    const result = await SigAuthNextWrapper.getInstance(SIGAUTH_OPTIONS).checkAuthentication('/api/example');
+    if (result.user) {
+        return NextResponse.json({ message: `Hello, ${result.user.name}! You are authenticated.` });
+    } else {
+        return NextResponse.json({ message: 'Hello, guest! You are not authenticated.' }, { status: 401 });
+    }
+}
+```
 
 ### `SigAuthNextWrapper`
 

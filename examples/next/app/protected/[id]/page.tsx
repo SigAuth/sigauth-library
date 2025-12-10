@@ -1,11 +1,13 @@
-// app/protected/page.tsx
+'use server';
+
 import { PermissionBuilder } from '@sigauth/next';
 import checkAuth from './checkAuth';
 import { SIGAUTH_OPTIONS } from '@/utils/constants';
+import { headers } from 'next/headers';
 
 export default async function Page({ params }: { params: Promise<{ id: number }> }) {
-    const result = await checkAuth();
     const { id } = await params;
+    const result = await checkAuth('/protected/' + id);
 
     const hasPermission = await result.sigauth?.hasPermission(
         new PermissionBuilder('view', SIGAUTH_OPTIONS.appId).withAssetId(id).withContainerId(2).build(),
