@@ -2,7 +2,6 @@
 import { PermissionBuilder } from '@sigauth/next';
 import checkAuth from './checkAuth';
 import { SIGAUTH_OPTIONS } from '@/utils/constants';
-import { headers } from 'next/headers';
 
 export default async function Page({ params }: { params: Promise<{ id: number }> }) {
     const result = await checkAuth();
