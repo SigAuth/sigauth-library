@@ -5,6 +5,8 @@
     "compilerOptions": {
         "baseUrl": ".",
         "outDir": "dist",
-        "rootDir": "src"
+        "rootDir": "src",
+        "module": "esnext",
+        "moduleResolution": "node"
     }
 }

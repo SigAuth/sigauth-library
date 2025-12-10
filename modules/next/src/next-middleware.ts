@@ -1,7 +1,7 @@
 import { SigAuthHandlerResponse, SigAuthOptions, SigauthVerifier } from '@sigauth/core';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { cookies, headers } from 'next/headers.js';
-import { redirect } from 'next/navigation.js';
+import { cookies, headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 /**
  * Singleton wrapper to use SigauthVerifier within Next.js applications
