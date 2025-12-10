@@ -69,13 +69,7 @@ export function sigauthExpress(opts: SigAuthOptions) {
             res.cookie('refreshToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0, path: '/' });
         }
 
-        const outcome = await verifier.validateRequest(
-            {
-                headers: req.headers as Record<string, string | string[] | undefined>,
-            },
-            req.url,
-        );
-
+        const outcome = await verifier.validateRequest(req, req.url);
         if (!outcome.ok) {
             res.cookie('accessToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0, path: '/' });
             res.cookie('refreshToken', '', { httpOnly: true, secure: opts.secureCookies ?? true, sameSite: 'lax', maxAge: 0, path: '/' });

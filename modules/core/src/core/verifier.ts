@@ -1,6 +1,6 @@
 import { importJWK, JWTPayload, jwtVerify } from 'jose';
-import { PermissionBuilder } from './permission.builder';
-import { JSONSerializable, SigAuthOptions, SigAuthUser, VerifyOutcome } from '../types';
+import { PermissionBuilder } from './permission.builder.js';
+import { JSONSerializable, SigAuthOptions, SigAuthUser, VerifyOutcome } from '../types.js';
 import { AppInfo, UserInfo } from '@sigauth/generics/json-types';
 
 export interface MinimalRequestLike {

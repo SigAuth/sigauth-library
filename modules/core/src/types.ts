@@ -1,4 +1,4 @@
-import { SigauthVerifier } from './core/verifier';
+import { SigauthVerifier } from './core/verifier.js';
 import { JWTPayload } from 'jose';
 
 export interface SigAuthOptions {
