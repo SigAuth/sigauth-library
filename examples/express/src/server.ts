@@ -6,9 +6,9 @@ const app = express();
 
 const opts = {
     issuer: 'http://localhost:5173', // SigAuth instance url
-    audience: 'Express App', // make sure this matches the audience configured in the SigAuth OIDC app
-    appId: 2, // example appId
-    appToken: 'EOQ0xCGu5ZS8q04RGNPAZ7QqoTnmr0Z5NJ2wZslleehV8Gx1pgGKVByN00DXHcsK', // example appToken
+    audience: 'TestB', // make sure this matches the audience configured in the SigAuth OIDC app
+    appId: 3, // example appId
+    appToken: 'IsDJoI2VHYzj6xMTI8IoG5KZ9OP5Xeszv3kW3RpVEgP9TIlYaEbt751q68raf79X', // example appToken
     authenticateRoutes: ['/protected/*', '/protected'],
     secureCookies: false, // for local testing without HTTPS
 } as SigAuthOptions;
@@ -35,6 +35,14 @@ app.get('/info', async (req: Express.Request, res: any) => {
     const sigAuth = new SigauthVerifier(opts);
     const appInfo = await sigAuth.getAppInfo();
     res.json({ ok: true, appInfo });
+});
+
+app.get('/sigauth-config.json', (req, res) => {
+    res.json({
+        asset: ['Read', 'Write', 'Delete'],
+        container: ['Contributor'],
+        root: ['Admin', 'Member'],
+    });
 });
 
 app.get('/', (req, res) => {

@@ -106,6 +106,7 @@ export class SigAuthNextWrapper {
         const code = searchParams.get('code') || '';
         const redirectUri = searchParams.get('redirectUri') || '';
 
+        console.log('Resolving auth code via SigAuthNextWrapper...');
         const result = await this.sigauth.resolveAuthCode(code, redirectUri);
 
         if (!result.ok) {

@@ -21,10 +21,11 @@ export class SigauthVerifier {
         this.opts = opts;
     }
 
-    private async request(method: 'POST' | 'GET', url: string, jsonBody?: JSONSerializable): Promise<Response> {
+    private async request(method: 'POST' | 'GET', url: string, jsonBody?: JSONSerializable, includeAppToken?: boolean): Promise<Response> {
         const res = await fetch(url, {
             method,
             headers: {
+                Authorization: `Token ${includeAppToken ? this.opts.appToken : ''}`,
                 'Content-Type': 'application/json',
             },
             credentials: 'include', // ensure cookies are sent with request
@@ -88,7 +89,9 @@ export class SigauthVerifier {
 
         const res = await this.request(
             'GET',
-            `${this.opts.issuer}/api/auth/oidc/refresh?refreshToken=${this.refreshToken}&app-token=${this.opts.appToken}`,
+            `${this.opts.issuer}/api/auth/oidc/refresh?refreshToken=${this.refreshToken}`,
+            undefined,
+            true,
         );
 
         const data = await res.json();
@@ -108,7 +111,9 @@ export class SigauthVerifier {
     async resolveAuthCode(code: string, redirectUri: string): Promise<{ ok: boolean; refreshToken: string; accessToken: string }> {
         const res = await this.request(
             'GET',
-            `${this.opts.issuer}/api/auth/oidc/exchange?code=${code}&app-token=${this.opts.appToken}&redirect-uri=${redirectUri}`,
+            `${this.opts.issuer}/api/auth/oidc/exchange?code=${code}&redirect-uri=${redirectUri}`,
+            undefined,
+            true,
         );
         const data = await res.json();
 
@@ -140,7 +145,7 @@ export class SigauthVerifier {
         await this.initTokens(req);
 
         if (!this.decodedAccessToken || !this.refreshToken) {
-            return { ok: false, status: 307, error: `${this.opts.issuer}/auth/oidc?appId=${this.opts.appId}&redirectUri=${redirectUri}` };
+            return { ok: false, status: 307, error: `${this.opts.issuer}/auth/oidc?appId=${this.opts.appId}&redirectUri=${redirectUri}`};
         }
 
         if (!this.decodedAccessToken) {
@@ -172,7 +177,9 @@ export class SigauthVerifier {
         // arg ist always string
         const res = await this.request(
             'GET',
-            `${this.opts.issuer}/api/auth/oidc/has-permission?permission=${arg}&appId=${this.opts.appId}&appToken=${this.opts.appToken}&accessToken=${this.accessToken}`,
+            `${this.opts.issuer}/api/auth/oidc/has-permission?permission=${arg}&appId=${this.opts.appId}&accessToken=${this.accessToken}`,
+            undefined,
+            true,
         );
         const data = await res.text();
         return res.ok;
@@ -190,7 +197,9 @@ export class SigauthVerifier {
 
         const res = await this.request(
             'GET',
-            `${this.opts.issuer}/api/auth/oidc/user-info?accessToken=${this.accessToken}&appToken=${this.opts.appToken}`,
+            `${this.opts.issuer}/api/auth/oidc/user-info?accessToken=${this.accessToken}`,
+            undefined,
+            true,
         );
         const data = await res.json();
         if (!res.ok) {
@@ -206,7 +215,7 @@ export class SigauthVerifier {
      * @returns All assets, containers and accounts that are related to the app
      */
     async getAppInfo() {
-        const res = await this.request('GET', `${this.opts.issuer}/api/app/info?appToken=${this.opts.appToken}`);
+        const res = await this.request('GET', `${this.opts.issuer}/api/app/info`, undefined, true);
         const data = await res.json();
         if (!res.ok) {
             console.error('Error fetching app info: ', data);
